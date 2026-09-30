@@ -23,6 +23,7 @@
 <body class="bg-gray-100 text-gray-900 font-sans antialiased min-h-screen">
 
   <script>
+    // 您的 Google Apps Script 最新正式 Web App 網址
     const API_URL = "https://script.google.com/macros/s/AKfycbz70umh00ocelEypOfgiCq5pRkOi5Lu6W5UD3eIjwfF-R3cyJjv8O2tPVFAOMXvJHkLVw/exec";
   </script>
 
@@ -577,7 +578,6 @@
     let currentPage = 1;
     let pageSize = 10;
 
-    // 動態暫存目前編輯中的多輪次數據
     let currentFormatHistory = [];
     let currentReviewRounds = [];
 
@@ -820,7 +820,7 @@
           `).join('');
         }
 
-        // 解析同儕複審各輪次
+        // 解析同儕複審各輪次 (已修正雙豎線語法)
         let reviewHtml = `<span class="text-gray-400">未排定送審</span>`;
         let rList = [];
         try { if (a.review_rounds_data) rList = JSON.parse(a.review_rounds_data); } catch (e) {}
@@ -828,8 +828,8 @@
           reviewHtml = rList.map((r, i) => `
             <div class="text-[11px] border-b border-indigo-200/60 pb-1 mb-1">
               <span class="font-bold text-indigo-800">${r.round_title || `第${i+1}輪`}:</span>
-              ${r.r1_name ? `<span>審1(${r.r1_name}): 送${r.r1_send_date\vert{}\vert{}'-'} 限${r.r1_due_date||'-'} 收${r.r1_return_date\vert{}\vert{}'-'} <strong>[${r.r1_result||'審查中'}]</strong></span><br>` : ''}
-              ${r.r2_name ? `<span>審2(${r.r2_name}): 送${r.r2_send_date\vert{}\vert{}'-'} 限${r.r2_due_date||'-'} 收${r.r2_return_date\vert{}\vert{}'-'} <strong>[${r.r2_result||'審查中'}]</strong></span>` : ''}
+              ${r.r1_name ? `<span>審1(${r.r1_name}): 送${r.r1_send_date \vert{}\vert{} '-'} 限${r.r1_due_date || '-'} 收${r.r1_return_date \vert{}\vert{} '-'} <strong>[${r.r1_result || '審查中'}]</strong></span><br>` : ''}
+              ${r.r2_name ? `<span>審2(${r.r2_name}): 送${r.r2_send_date \vert{}\vert{} '-'} 限${r.r2_due_date || '-'} 收${r.r2_return_date \vert{}\vert{} '-'} <strong>[${r.r2_result || '審查中'}]</strong></span>` : ''}
             </div>
           `).join('');
         }
@@ -874,7 +874,7 @@
       }
     }
 
-    // 01 審查人推薦與婉拒歷史 (醒目格式化呈現已婉拒學者名單)
+    // 01 審查人推薦與婉拒歷史
     function renderReviewersTab(kw = "") {
       const tbody = document.getElementById('reviewerTableBody');
       tbody.innerHTML = "";
@@ -1261,7 +1261,6 @@
       renderReviewRoundCards();
     }
 
-    // 比對防呆
     function checkRoundDuplicateReviewer(roundIdx, reviewerNum, val) {
       val = val.trim();
       const warnBox = document.getElementById(`dupWarn_${roundIdx}_${reviewerNum}`);
@@ -1275,7 +1274,6 @@
       }
     }
 
-    // 婉拒更換
     function archiveRoundReviewer(roundIdx, reviewerNum) {
       const round = currentReviewRounds[roundIdx];
       const nameKey = reviewerNum === 1 ? 'r1_name' : 'r2_name';
@@ -1299,7 +1297,6 @@
         logBox.value = newArchiveLine;
       }
 
-      // 清空目前輸入框
       round[nameKey] = "";
       if (reviewerNum === 1) {
         round.r1_invite_date = today;
@@ -1319,7 +1316,6 @@
       alert(`評審【${reviewerName}】婉拒紀錄已封存！可直接填寫新評審。`);
     }
 
-    // 開啟編輯視窗
     function openEditModal(articleId) {
       const a = globalArticles.find(item => item.article_id === articleId);
       if (!a) return;
@@ -1332,14 +1328,12 @@
       document.getElementById('editIssueNo').value = a.issue_no || "";
       document.getElementById('editDoiNo').value = a.doi_no || "";
 
-      // 載入多輪形審
       currentFormatHistory = [];
       try {
         if (a.format_history) currentFormatHistory = JSON.parse(a.format_history);
       } catch (e) {}
       renderFormatRounds();
 
-      // 載入多輪實質審查
       currentReviewRounds = [];
       try {
         if (a.review_rounds_data) currentReviewRounds = JSON.parse(a.review_rounds_data);
@@ -1349,7 +1343,6 @@
       openModal('editArticleModal');
     }
 
-    // 儲存全期程多輪次資料
     async function handleUpdateArticle(e) {
       e.preventDefault();
       const btn = document.getElementById('btnUpdateArticle');
@@ -1369,8 +1362,6 @@
           recommended_reviewers: document.getElementById('editRecommendedReviewers').value.trim(),
           issue_no: document.getElementById('editIssueNo').value.trim(),
           doi_no: document.getElementById('editDoiNo').value.trim(),
-
-          // 核心：多輪次結構化資料完整存入
           format_history: currentFormatHistory,
           review_rounds_data: currentReviewRounds
         }
