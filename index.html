@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TJOC 稿件管理系統</title>
+  <title>TJOC 稿件審查管理系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
@@ -13,212 +13,352 @@
       box-shadow: none !important;
       text-shadow: none !important;
     }
+    .tab-active {
+      background-color: #1e1b4b !important;
+      color: #ffffff !important;
+      border-bottom: 2px solid #6366f1 !important;
+    }
   </style>
 </head>
 <body class="bg-gray-100 text-gray-900 font-sans antialiased min-h-screen">
 
   <script>
-    // 請確認為最新的 Google Apps Script 部署網址
-    const API_URL = "https://script.google.com/macros/s/AKfycbz70umh00ocelEypOfgiCq5pRkOi5Lu6W5UD3eIjwfF-R3cyJjv8O2tPVFAOMXvJHkLVw/exec";
+    // 您的 Google Apps Script 正式 API 網址
+    const API_URL = "https://script.google.com/macros/s/AKfycbyXc8jEuEvkY9Sh-eKtiUnf3UYg3XjcbGlpXPMLhHGaIl1_nyYA2NPcfYb1vN56A81JpQ/exec";
   </script>
 
-  <!-- 1. 未登入專屬視窗 -->
+  <!-- 1. 未登入視窗 -->
   <div id="loginView" class="min-h-screen flex items-center justify-center p-4 bg-gray-200">
     <div class="bg-white border-2 border-gray-800 w-full max-w-md p-8">
       <div class="border-b border-gray-200 pb-5 mb-6 text-center">
         <span class="inline-block bg-indigo-700 text-white font-extrabold text-xs px-3 py-1 tracking-wider uppercase mb-3">TJOC</span>
-        <h2 class="text-xl font-extrabold text-gray-900 tracking-tight">稿件與審查管理系統</h2>
-        <p class="text-xs text-gray-500 mt-1">本系統僅限受權管理員登入使用</p>
+        <h2 class="text-xl font-extrabold text-gray-900 tracking-tight">學刊編務管理系統</h2>
+        <p class="text-xs text-gray-500 mt-1">管理員登入</p>
       </div>
 
       <form onsubmit="handleLogin(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-bold text-gray-700 uppercase mb-1">管理帳號</label>
-          <input type="text" id="loginUsername" required placeholder="請輸入管理帳號" class="w-full border border-gray-300 bg-gray-50 p-2.5 text-xs outline-none focus:border-indigo-600 focus:bg-white transition">
+          <input type="text" id="loginUsername" required placeholder="帳號" class="w-full border border-gray-300 bg-gray-50 p-2.5 text-xs outline-none focus:border-indigo-600 focus:bg-white">
         </div>
         <div>
           <label class="block text-xs font-bold text-gray-700 uppercase mb-1">管理密碼</label>
-          <input type="password" id="loginPassword" required placeholder="請輸入管理密碼" class="w-full border border-gray-300 bg-gray-50 p-2.5 text-xs outline-none focus:border-indigo-600 focus:bg-white transition">
+          <input type="password" id="loginPassword" required placeholder="密碼" class="w-full border border-gray-300 bg-gray-50 p-2.5 text-xs outline-none focus:border-indigo-600 focus:bg-white">
         </div>
 
         <div id="loginError" class="text-xs text-red-600 hidden font-bold border border-red-200 bg-red-50 p-2"></div>
 
-        <button type="submit" id="btnLogin" class="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs uppercase tracking-wider border border-indigo-900 transition">
+        <button type="submit" id="btnLogin" class="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs uppercase tracking-wider border border-indigo-900">
           登入系統
         </button>
       </form>
-
-      <div class="text-center mt-6 text-[11px] text-gray-400">
-        若需變更帳密，請聯繫Tyler。
-      </div>
     </div>
   </div>
 
-  <!-- 2. 系統正式主介面 -->
+  <!-- 2. 系統主介面 -->
   <div id="mainApp" class="hidden">
+
+    <!-- 頂部主導航列 -->
     <header class="bg-gray-900 text-white border-b border-gray-800 sticky top-0 z-40">
-      <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
         <div class="flex items-center space-x-3">
           <span class="bg-indigo-600 text-white font-extrabold px-2.5 py-1 text-xs tracking-wider">TJOC</span>
-          <h1 class="text-base sm:text-lg font-bold tracking-tight">學刊投稿與審查管理系統</h1>
+          <h1 class="text-sm sm:text-base font-bold tracking-tight">投稿、審查與刊登編務系統</h1>
         </div>
         <div class="flex items-center space-x-2">
-          <div class="hidden sm:flex items-center space-x-2 bg-gray-800 px-3 py-1.5 border border-gray-700 text-xs">
+          <div class="hidden sm:flex items-center space-x-2 bg-gray-800 px-3 py-1 border border-gray-700 text-xs">
             <i class="fas fa-user-shield text-indigo-400"></i>
             <span id="currentUserDisplay" class="text-gray-200 font-medium">--</span>
           </div>
-          <button onclick="fetchData()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs text-gray-200 border border-gray-700 transition">
-            <i class="fas fa-sync-alt mr-1"></i> 整理
+          <button onclick="fetchData()" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-xs text-gray-200 border border-gray-700">
+            <i class="fas fa-sync-alt mr-1"></i> 重整
           </button>
-          <button onclick="openModal('newArticleModal')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-xs text-white font-bold border border-indigo-700 transition">
+          <button onclick="openModal('newArticleModal')" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-xs text-white font-bold border border-indigo-700">
             <i class="fas fa-plus mr-1"></i> 新增稿件
           </button>
-          <button onclick="handleLogout()" class="px-3 py-1.5 bg-red-700 hover:bg-red-800 text-xs text-white border border-red-900 transition" title="登出系統">
+          <button onclick="handleLogout()" class="px-2.5 py-1 bg-red-700 hover:bg-red-800 text-xs text-white border border-red-900" title="登出">
             <i class="fas fa-sign-out-alt"></i>
           </button>
         </div>
       </div>
+
+      <!-- 分頁標籤切換列 (Tabs) -->
+      <nav class="max-w-7xl mx-auto px-4 flex space-x-1 overflow-x-auto text-xs font-bold border-t border-gray-800">
+        <button onclick="switchTab('tab-dashboard')" id="btn-tab-dashboard" class="px-4 py-2.5 text-gray-300 hover:text-white hover:bg-gray-800 border-b-2 border-transparent transition">
+          <i class="fas fa-tachometer-alt mr-1.5"></i>數據 Dashboard
+        </button>
+        <button onclick="switchTab('tab-progress')" id="btn-tab-progress" class="px-4 py-2.5 text-gray-300 hover:text-white hover:bg-gray-800 border-b-2 border-transparent transition tab-active">
+          <i class="fas fa-tasks mr-1.5"></i>02 稿件審查進度
+        </button>
+        <button onclick="switchTab('tab-reviewers')" id="btn-tab-reviewers" class="px-4 py-2.5 text-gray-300 hover:text-white hover:bg-gray-800 border-b-2 border-transparent transition">
+          <i class="fas fa-user-check mr-1.5"></i>01 審查人推薦與徵詢
+        </button>
+        <button onclick="switchTab('tab-editor')" id="btn-tab-editor" class="px-4 py-2.5 text-gray-300 hover:text-white hover:bg-gray-800 border-b-2 border-transparent transition">
+          <i class="fas fa-gavel mr-1.5"></i>請主編定奪
+        </button>
+        <button onclick="switchTab('tab-publication')" id="btn-tab-publication" class="px-4 py-2.5 text-gray-300 hover:text-white hover:bg-gray-800 border-b-2 border-transparent transition">
+          <i class="fas fa-print mr-1.5"></i>04 待刊與校對排版
+        </button>
+        <button onclick="switchTab('tab-export')" id="btn-tab-export" class="px-4 py-2.5 text-gray-300 hover:text-white hover:bg-gray-800 border-b-2 border-transparent transition">
+          <i class="fas fa-file-export mr-1.5"></i>評鑑清冊匯出
+        </button>
+      </nav>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-      <!-- KPI 統計數字 -->
-      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white border border-gray-300 p-5">
-          <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">總收稿數</div>
-          <div id="statTotal" class="text-3xl font-extrabold text-gray-900 mt-2">--</div>
-          <div class="text-xs text-gray-400 mt-1">TJOC 資料庫全部稿件</div>
-        </div>
-        <div class="bg-white border border-gray-300 p-5">
-          <div class="text-xs font-bold text-amber-700 uppercase tracking-wider">審查 / 修改中</div>
-          <div id="statInReview" class="text-3xl font-extrabold text-amber-700 mt-2">--</div>
-          <div class="text-xs text-gray-400 mt-1">送審中或待修訂</div>
-        </div>
-        <div class="bg-white border border-gray-300 p-5">
-          <div class="text-xs font-bold text-emerald-700 uppercase tracking-wider">已通過 / 待刊</div>
-          <div id="statAccepted" class="text-3xl font-extrabold text-emerald-700 mt-2">--</div>
-          <div class="text-xs text-gray-400 mt-1">進入校編刊登流程</div>
-        </div>
-        <div class="bg-white border border-gray-300 p-5">
-          <div class="text-xs font-bold text-red-700 uppercase tracking-wider">逾期提醒</div>
-          <div id="statOverdue" class="text-3xl font-extrabold text-red-700 mt-2">0</div>
-          <div class="text-xs text-red-500 mt-1">已逾回覆期限之任務</div>
-        </div>
-      </section>
+    <main class="max-w-7xl mx-auto px-4 py-6">
 
-      <!-- 圖表與提醒 -->
-      <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="bg-white border border-gray-300 p-5">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-gray-700 mb-4 pb-2 border-b border-gray-200">
-            <i class="fas fa-chart-pie mr-1 text-indigo-600"></i> 稿件狀態分佈
-          </h2>
-          <div class="relative h-64">
-            <canvas id="statusChart"></canvas>
+      <!-- ============================================== -->
+      <!-- TAB 1: 數據 Dashboard 獨立分頁 -->
+      <!-- ============================================== -->
+      <div id="tab-dashboard" class="tab-pane hidden space-y-6">
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white border border-gray-300 p-5">
+            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">總收稿數</div>
+            <div id="statTotal" class="text-3xl font-extrabold text-gray-900 mt-2">--</div>
+            <div class="text-xs text-gray-400 mt-1">TJOC 資料庫全部稿件</div>
           </div>
-        </div>
+          <div class="bg-white border border-gray-300 p-5">
+            <div class="text-xs font-bold text-amber-700 uppercase tracking-wider">審查 / 修改中</div>
+            <div id="statInReview" class="text-3xl font-extrabold text-amber-700 mt-2">--</div>
+            <div class="text-xs text-gray-400 mt-1">初審、二審或作者修稿</div>
+          </div>
+          <div class="bg-white border border-gray-300 p-5">
+            <div class="text-xs font-bold text-emerald-700 uppercase tracking-wider">已通過 / 待刊</div>
+            <div id="statAccepted" class="text-3xl font-extrabold text-emerald-700 mt-2">--</div>
+            <div class="text-xs text-gray-400 mt-1">進入校編與刊登排版</div>
+          </div>
+          <div class="bg-white border border-gray-300 p-5">
+            <div class="text-xs font-bold text-red-700 uppercase tracking-wider">逾期提醒</div>
+            <div id="statOverdue" class="text-3xl font-extrabold text-red-700 mt-2">0</div>
+            <div class="text-xs text-red-500 mt-1">超過回覆期限之任務</div>
+          </div>
+        </section>
 
-        <div class="bg-white border border-gray-300 p-5 lg:col-span-2">
-          <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
-            <h2 class="text-xs font-bold uppercase tracking-wider text-gray-700">
-              <i class="fas fa-bell mr-1 text-amber-600"></i> 重要進度與催辦提醒
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="bg-white border border-gray-300 p-5">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-gray-700 mb-4 pb-2 border-b border-gray-200">
+              <i class="fas fa-chart-pie mr-1 text-indigo-600"></i> 稿件狀態分佈
             </h2>
-            <span class="text-xs text-gray-400 font-mono">依期限排序</span>
+            <div class="relative h-64">
+              <canvas id="statusChart"></canvas>
+            </div>
           </div>
-          <div class="overflow-x-auto max-h-64">
-            <table class="w-full text-left text-xs">
-              <thead class="bg-gray-100 text-gray-600 font-bold border-b border-gray-200">
+
+          <div class="bg-white border border-gray-300 p-5 lg:col-span-2">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
+              <h2 class="text-xs font-bold uppercase tracking-wider text-gray-700">
+                <i class="fas fa-bell mr-1 text-amber-600"></i> 重要進度與催辦提醒
+              </h2>
+              <span class="text-xs text-gray-400 font-mono">依回覆期限排序</span>
+            </div>
+            <div class="overflow-x-auto max-h-64">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-gray-100 text-gray-600 font-bold border-b border-gray-200">
+                  <tr>
+                    <th class="p-2.5">系統編號</th>
+                    <th class="p-2.5">任務階段</th>
+                    <th class="p-2.5">審查人 / 對象</th>
+                    <th class="p-2.5">回覆期限</th>
+                    <th class="p-2.5">狀態</th>
+                  </tr>
+                </thead>
+                <tbody id="reminderTableBody" class="divide-y divide-gray-200">
+                  <tr><td colspan="5" class="p-4 text-center text-gray-400">載入中...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 2: 02 稿件審查進度分頁 (含分頁控制) -->
+      <!-- ============================================== -->
+      <div id="tab-progress" class="tab-pane space-y-4">
+        <div class="bg-white border border-gray-300 p-5">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+            <div class="flex items-center space-x-3">
+              <h2 class="text-xs font-bold uppercase tracking-wider text-gray-800">
+                <i class="fas fa-tasks mr-1 text-indigo-600"></i> 稿件審查進度總表
+              </h2>
+              <span id="tableTotalInfo" class="text-xs text-gray-500">共 0 筆</span>
+            </div>
+            <div class="flex items-center space-x-2 w-full sm:w-auto">
+              <select id="pageSizeSelect" onchange="changePageSize(this.value)" class="border border-gray-300 bg-gray-50 px-2 py-1 text-xs text-gray-700 outline-none">
+                <option value="10">每頁 10 筆</option>
+                <option value="25">每頁 25 筆</option>
+                <option value="50">每頁 50 筆</option>
+              </select>
+              <input type="text" id="searchBox" onkeyup="handleSearch()" placeholder="搜尋編號、篇名、作者..." class="border border-gray-300 bg-gray-50 px-3 py-1 text-xs w-full sm:w-64 outline-none">
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs" id="articlesTable">
+              <thead class="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
                 <tr>
-                  <th class="p-2.5">系統編號</th>
-                  <th class="p-2.5">當前任務</th>
-                  <th class="p-2.5">對象/審查人</th>
-                  <th class="p-2.5">回覆期限</th>
-                  <th class="p-2.5">狀態</th>
+                  <th class="p-3">系統編號</th>
+                  <th class="p-3">收件日</th>
+                  <th class="p-3">論文名稱</th>
+                  <th class="p-3">通訊作者</th>
+                  <th class="p-3">類別</th>
+                  <th class="p-3">審查狀態</th>
+                  <th class="p-3">最終決議</th>
+                  <th class="p-3 text-center">操作</th>
                 </tr>
               </thead>
-              <tbody id="reminderTableBody" class="divide-y divide-gray-200">
-                <tr><td colspan="5" class="p-4 text-center text-gray-400">載入中...</td></tr>
+              <tbody id="articlesTableBody" class="divide-y divide-gray-200">
+                <tr><td colspan="8" class="p-4 text-center text-gray-400">載入中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 分頁按鈕列 -->
+          <div class="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-gray-200 mt-2">
+            <div class="text-xs text-gray-500" id="pageDisplayInfo">顯示第 0 至 0 筆</div>
+            <div class="flex items-center space-x-1">
+              <button onclick="prevPage()" id="btnPrevPage" class="px-3 py-1 border border-gray-300 bg-white text-xs font-bold text-gray-700 hover:bg-gray-100 disabled:opacity-40">上一頁</button>
+              <div id="pageNumbers" class="flex space-x-1"></div>
+              <button onclick="nextPage()" id="btnNextPage" class="px-3 py-1 border border-gray-300 bg-white text-xs font-bold text-gray-700 hover:bg-gray-100 disabled:opacity-40">下一頁</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 3: 01 審查人推薦與徵詢分頁 -->
+      <!-- ============================================== -->
+      <div id="tab-reviewers" class="tab-pane hidden space-y-4">
+        <div class="bg-white border border-gray-300 p-5">
+          <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+            <div>
+              <h2 class="text-xs font-bold uppercase tracking-wider text-gray-800">
+                <i class="fas fa-user-check mr-1 text-indigo-600"></i> 審查人推薦名單與徵詢順序紀錄
+              </h2>
+              <p class="text-xs text-gray-400 mt-0.5">對應 Excel「01審查人」：推薦名單、徵詢/婉拒記錄、初審/復審同意人</p>
+            </div>
+            <input type="text" onkeyup="filterReviewerTable(this.value)" placeholder="搜尋論文或審查人..." class="border border-gray-300 bg-gray-50 px-3 py-1 text-xs w-64 outline-none">
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs" id="reviewerTable">
+              <thead class="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
+                <tr>
+                  <th class="p-3 w-28">系統編號</th>
+                  <th class="p-3">論文名稱 / 作者</th>
+                  <th class="p-3">編委推薦審查人</th>
+                  <th class="p-3">詢問順序與回覆記錄</th>
+                  <th class="p-3 w-36">審查同意人(初/復審)</th>
+                  <th class="p-3 text-center w-24">操作</th>
+                </tr>
+              </thead>
+              <tbody id="reviewerTableBody" class="divide-y divide-gray-200">
+                <tr><td colspan="6" class="p-4 text-center text-gray-400">載入中...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
-      </section>
+      </div>
 
-      <!-- 匯出專區 -->
-      <section class="bg-white border border-gray-300 p-5">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div>
+      <!-- ============================================== -->
+      <!-- TAB 4: 請主編定奪分頁 -->
+      <!-- ============================================== -->
+      <div id="tab-editor" class="tab-pane hidden space-y-4">
+        <div class="bg-white border border-gray-300 p-5">
+          <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+            <div>
+              <h2 class="text-xs font-bold uppercase tracking-wider text-red-700">
+                <i class="fas fa-gavel mr-1"></i> 請主編定奪專區
+              </h2>
+              <p class="text-xs text-gray-400 mt-0.5">收齊審查意見或狀態為「待主編定奪」之稿件裁示清單</p>
+            </div>
+            <span class="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-1" id="editorPendingCount">待定奪：0 篇</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
+                <tr>
+                  <th class="p-3">系統編號</th>
+                  <th class="p-3">收件日</th>
+                  <th class="p-3">論文名稱</th>
+                  <th class="p-3">通訊作者</th>
+                  <th class="p-3">當前審查狀態</th>
+                  <th class="p-3">主編裁決記錄</th>
+                  <th class="p-3 text-center">裁定操作</th>
+                </tr>
+              </thead>
+              <tbody id="editorTableBody" class="divide-y divide-gray-200">
+                <tr><td colspan="7" class="p-4 text-center text-gray-400">目前無待主編定奪之稿件</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 5: 04 待刊與校對排版分頁 -->
+      <!-- ============================================== -->
+      <div id="tab-publication" class="tab-pane hidden space-y-4">
+        <div class="bg-white border border-gray-300 p-5">
+          <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+            <div>
+              <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                <i class="fas fa-print mr-1"></i> 待刊與校對排版流程
+              </h2>
+              <p class="text-xs text-gray-400 mt-0.5">對應 Excel「04待刊」：英文摘要校編、DOI申請、第一校/二校/三校進度</p>
+            </div>
+            <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1" id="pubCount">待刊總數：0 篇</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
+                <tr>
+                  <th class="p-3">系統編號</th>
+                  <th class="p-3">篇名 / 作者</th>
+                  <th class="p-3">預計刊登期別</th>
+                  <th class="p-3">DOI 編號</th>
+                  <th class="p-3">校編與排版進度</th>
+                  <th class="p-3 text-center">登記校對</th>
+                </tr>
+              </thead>
+              <tbody id="publicationTableBody" class="divide-y divide-gray-200">
+                <tr><td colspan="6" class="p-4 text-center text-gray-400">目前無待刊稿件</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- TAB 6: 評鑑清冊匯出專區 -->
+      <!-- ============================================== -->
+      <div id="tab-export" class="tab-pane hidden space-y-4">
+        <div class="bg-white border border-gray-300 p-5">
+          <div class="border-b border-gray-200 pb-3 mb-4">
             <h2 class="text-xs font-bold uppercase tracking-wider text-gray-800">
-              <i class="fas fa-file-export mr-1 text-indigo-600"></i> 評鑑清冊匯出中心
+              <i class="fas fa-file-export mr-1 text-indigo-600"></i> 評鑑清冊資料匯出中心
             </h2>
-            <p class="text-xs text-gray-500 mt-1">選定日期區間或編號，一鍵導出完整時間戳記評鑑紀錄</p>
+            <p class="text-xs text-gray-500 mt-1">選定日期區間或特定稿件，匯出完整包含審查時間戳記之評鑑 Excel 報表</p>
           </div>
-          <div class="flex flex-wrap items-center gap-2">
-            <input type="date" id="exportStartDate" class="border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-indigo-600">
-            <span class="text-xs text-gray-400">至</span>
-            <input type="date" id="exportEndDate" class="border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-indigo-600">
-            <input type="text" id="exportKeyword" placeholder="搜尋編號 / 作者" class="border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-700 w-36 outline-none focus:border-indigo-600">
-            <button onclick="exportToExcel()" class="px-3.5 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold border border-indigo-900 transition">
-              <i class="fas fa-download mr-1"></i> 匯出評鑑 Excel
-            </button>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-50 p-4 border border-gray-200 mb-4">
+            <div>
+              <label class="block text-xs font-bold text-gray-600 mb-1">收件起始日</label>
+              <input type="date" id="exportStartDate" class="w-full border border-gray-300 bg-white p-2 text-xs outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-600 mb-1">收件截止日</label>
+              <input type="date" id="exportEndDate" class="w-full border border-gray-300 bg-white p-2 text-xs outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-600 mb-1">特定篇名/作者/編號</label>
+              <input type="text" id="exportKeyword" placeholder="留空表示全部" class="w-full border border-gray-300 bg-white p-2 text-xs outline-none">
+            </div>
           </div>
+          <button onclick="exportToExcel()" class="px-5 py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold border border-indigo-900 transition">
+            <i class="fas fa-download mr-1.5"></i> 一鍵匯出評鑑 Excel 清冊
+          </button>
         </div>
-      </section>
+      </div>
 
-      <!-- 稿件清單 -->
-      <section class="bg-white border border-gray-300 p-5">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-2 border-b border-gray-200">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-gray-800">
-            <i class="fas fa-list-alt mr-1 text-indigo-600"></i> TJOC 稿件總清單
-          </h2>
-          <input type="text" id="searchBox" onkeyup="filterArticlesTable()" placeholder="快速過濾篇名、作者或編號..." class="border border-gray-300 bg-gray-50 px-3 py-1.5 text-xs w-full sm:w-72 outline-none focus:border-indigo-600">
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs" id="articlesTable">
-            <thead class="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
-              <tr>
-                <th class="p-3">系統編號</th>
-                <th class="p-3">收件日</th>
-                <th class="p-3">論文名稱</th>
-                <th class="p-3">通訊作者</th>
-                <th class="p-3">類別</th>
-                <th class="p-3">目前狀態</th>
-                <th class="p-3 text-center">功能操作</th>
-              </tr>
-            </thead>
-            <tbody id="articlesTableBody" class="divide-y divide-gray-200">
-              <tr><td colspan="7" class="p-4 text-center text-gray-400">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- 系統稽核日誌 -->
-      <section id="auditSection" class="bg-white border border-gray-300 p-5">
-        <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
-          <div>
-            <h2 class="text-xs font-bold uppercase tracking-wider text-gray-800">
-              <i class="fas fa-clipboard-list mr-1 text-gray-600"></i> 系統操作稽核日誌（Audit Trail）
-            </h2>
-            <p class="text-xs text-gray-400 mt-0.5">即時記錄所有新增、修改、刪除與打卡節點</p>
-          </div>
-          <span class="text-xs font-mono text-gray-400" id="auditLogCount">0 筆記錄</span>
-        </div>
-        <div class="overflow-x-auto max-h-56">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-gray-100 text-gray-600 font-bold border-b border-gray-200">
-              <tr>
-                <th class="p-2.5">時間</th>
-                <th class="p-2.5">操作者</th>
-                <th class="p-2.5">動作</th>
-                <th class="p-2.5">稿件編號</th>
-                <th class="p-2.5">詳細說明</th>
-              </tr>
-            </thead>
-            <tbody id="auditTableBody" class="divide-y divide-gray-200">
-              <tr><td colspan="5" class="p-3 text-center text-gray-400">暫無紀錄</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
     </main>
   </div>
 
@@ -233,21 +373,21 @@
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-bold text-gray-700 uppercase mb-1">系統編號 *</label>
-            <input type="text" id="formArticleId" required placeholder="如 CJC26N023" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none focus:border-indigo-600">
+            <input type="text" id="formArticleId" required placeholder="如 CJC26N023" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none">
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-700 uppercase mb-1">收件日期 *</label>
-            <input type="date" id="formReceivedDate" required class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none focus:border-indigo-600">
+            <input type="date" id="formReceivedDate" required class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none">
           </div>
         </div>
         <div>
           <label class="block text-xs font-bold text-gray-700 uppercase mb-1">論文名稱 *</label>
-          <input type="text" id="formTitle" required placeholder="輸入論文完整名稱" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none focus:border-indigo-600">
+          <input type="text" id="formTitle" required placeholder="輸入論文完整名稱" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none">
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-bold text-gray-700 uppercase mb-1">文章類別</label>
-            <select id="formCategory" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none focus:border-indigo-600">
+            <select id="formCategory" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none">
               <option value="一般論文">一般論文</option>
               <option value="專題論文">專題論文</option>
               <option value="書評評論">書評評論</option>
@@ -255,22 +395,22 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-700 uppercase mb-1">通訊作者 *</label>
-            <input type="text" id="formAuthor" required placeholder="作者姓名" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none focus:border-indigo-600">
+            <input type="text" id="formAuthor" required placeholder="作者姓名" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none">
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Email</label>
-            <input type="email" id="formEmail" placeholder="author@email.com" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none focus:border-indigo-600">
+            <input type="email" id="formEmail" placeholder="author@email.com" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none">
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-700 uppercase mb-1">職稱與服務單位</label>
-            <input type="text" id="formAffiliation" placeholder="所屬機構 / 職稱" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none focus:border-indigo-600">
+            <input type="text" id="formAffiliation" placeholder="所屬機構 / 職稱" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none">
           </div>
         </div>
         <div>
           <label class="block text-xs font-bold text-gray-700 uppercase mb-1">共同作者</label>
-          <input type="text" id="formCoAuthors" placeholder="以逗號分隔" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none focus:border-indigo-600">
+          <input type="text" id="formCoAuthors" placeholder="以逗號分隔" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none">
         </div>
         <div class="flex justify-end space-x-2 pt-4 border-t border-gray-200">
           <button type="button" onclick="closeModal('newArticleModal')" class="px-3.5 py-1.5 border border-gray-300 text-xs font-bold text-gray-700 hover:bg-gray-100">取消</button>
@@ -280,104 +420,130 @@
     </div>
   </div>
 
-  <!-- Modal 2: 編輯稿件 -->
+  <!-- Modal 2: 編輯稿件 (含審查人、主編定奪、DOI 欄位) -->
   <div id="editArticleModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center hidden z-50 p-4">
-    <div class="bg-white border-2 border-gray-800 w-full max-w-xl p-6 max-h-[90vh] overflow-y-auto">
+    <div class="bg-white border-2 border-gray-800 w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center pb-3 border-b border-gray-200 mb-4">
-        <h3 class="text-base font-bold text-gray-900">編輯稿件資料</h3>
+        <h3 class="text-base font-bold text-gray-900">編輯稿件審查與進度資料</h3>
         <button onclick="closeModal('editArticleModal')" class="text-gray-500 hover:text-gray-800 text-lg font-bold">&times;</button>
       </div>
       <form onsubmit="handleUpdateArticle(event)" class="space-y-4">
         <input type="hidden" id="editArticleId">
+        
         <div>
           <label class="block text-xs font-bold text-gray-700 uppercase mb-1">論文名稱</label>
-          <input type="text" id="editTitle" required class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none focus:border-indigo-600">
+          <input type="text" id="editTitle" required class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none">
         </div>
+
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">文章類別</label>
-            <select id="editCategory" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none focus:border-indigo-600">
-              <option value="一般論文">一般論文</option>
-              <option value="專題論文">專題論文</option>
-              <option value="書評評論">書評評論</option>
-            </select>
-          </div>
-          <div>
             <label class="block text-xs font-bold text-gray-700 uppercase mb-1">目前狀態</label>
-            <select id="editCurrentStatus" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs font-bold text-indigo-700 outline-none focus:border-indigo-600">
+            <select id="editCurrentStatus" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs font-bold text-indigo-700 outline-none">
               <option value="形式審查中">形式審查中</option>
               <option value="送初審中">送初審中</option>
               <option value="作者修訂中">作者修訂中</option>
               <option value="送復審中">送復審中</option>
-              <option value="待主編定奪">待主編定奪</option>
-              <option value="排版校對中">排版校對中</option>
+              <option value="請主編定奪">請主編定奪</option>
+              <option value="待刊排版中">待刊排版中</option>
               <option value="已刊登">已刊登</option>
               <option value="退稿">退稿</option>
             </select>
           </div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">通訊作者</label>
-            <input type="text" id="editAuthor" required class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none focus:border-indigo-600">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Email</label>
-            <input type="email" id="editEmail" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none focus:border-indigo-600">
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">最終決議 (主編/執編)</label>
+            <input type="text" id="editFinalDecision" placeholder="如 同意刊登 / 逕行退稿" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none">
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">最終決議 (僅限主編/執行編輯)</label>
-            <input type="text" id="editFinalDecision" placeholder="如 同意刊登 / 逕行退稿" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none focus:border-indigo-600">
+
+        <!-- 審查人推薦與詢問記錄 (對應 01審查人) -->
+        <div class="border border-gray-200 p-3 bg-gray-50 space-y-3">
+          <div class="text-xs font-bold text-indigo-900 border-b border-gray-200 pb-1">
+            <i class="fas fa-user-friends mr-1"></i> 審查人徵詢與同意記錄（對應 01審查人）
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">刊登期數</label>
-            <input type="text" id="editIssueNo" placeholder="如 48期" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none focus:border-indigo-600">
+            <label class="block text-[11px] font-bold text-gray-600 mb-1">編委推薦審查人清單</label>
+            <textarea id="editRecommendedReviewers" rows="2" placeholder="推薦人名單與任職機構..." class="w-full border border-gray-300 bg-white p-1.5 text-xs outline-none"></textarea>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-gray-600 mb-1">徵詢順序與回覆記錄 (如 某教授--婉拒)</label>
+            <textarea id="editReviewerInquiryLog" rows="2" placeholder="徵詢歷程..." class="w-full border border-gray-300 bg-white p-1.5 text-xs outline-none"></textarea>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-gray-600 mb-1">初審同意人</label>
+              <input type="text" id="editAgreedReviewer1" placeholder="初審審查人" class="w-full border border-gray-300 bg-white p-1.5 text-xs outline-none">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-gray-600 mb-1">復審同意人</label>
+              <input type="text" id="editAgreedReviewer2" placeholder="復審審查人" class="w-full border border-gray-300 bg-white p-1.5 text-xs outline-none">
+            </div>
           </div>
         </div>
-        <div>
-          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">服務單位/職稱</label>
-          <input type="text" id="editAffiliation" class="w-full border border-gray-300 bg-gray-50 p-2 text-xs outline-none focus:border-indigo-600">
+
+        <!-- 待刊與刊登排版 (對應 04待刊) -->
+        <div class="border border-gray-200 p-3 bg-gray-50 space-y-3">
+          <div class="text-xs font-bold text-emerald-900 border-b border-gray-200 pb-1">
+            <i class="fas fa-book mr-1"></i> 刊登與 DOI 設定（對應 04待刊）
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-gray-600 mb-1">刊登期數</label>
+              <input type="text" id="editIssueNo" placeholder="如 48期" class="w-full border border-gray-300 bg-white p-1.5 text-xs outline-none">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-gray-600 mb-1">DOI 編號</label>
+              <input type="text" id="editDoiNo" placeholder="10.3966/..." class="w-full border border-gray-300 bg-white p-1.5 text-xs outline-none">
+            </div>
+          </div>
         </div>
+
         <div class="flex justify-end space-x-2 pt-4 border-t border-gray-200">
           <button type="button" onclick="closeModal('editArticleModal')" class="px-3.5 py-1.5 border border-gray-300 text-xs font-bold text-gray-700 hover:bg-gray-100">取消</button>
-          <button type="submit" id="btnUpdateArticle" class="px-4 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold border border-indigo-900">儲存修改</button>
+          <button type="submit" id="btnUpdateArticle" class="px-4 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold border border-indigo-900">儲存資料</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal 3: 歷程時間軸 -->
+  <!-- Modal 3: 歷程時間軸與打卡 -->
   <div id="timelineModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center hidden z-50 p-4">
     <div class="bg-white border-2 border-gray-800 w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center pb-3 border-b border-gray-200 mb-4">
         <div>
-          <h3 id="timelineTitle" class="text-sm font-bold text-gray-900">稿件時間軸</h3>
+          <h3 id="timelineTitle" class="text-sm font-bold text-gray-900">審查與校對時間戳記歷程</h3>
           <p id="timelineSub" class="text-xs text-gray-500"></p>
         </div>
         <button onclick="closeModal('timelineModal')" class="text-gray-500 hover:text-gray-800 text-lg font-bold">&times;</button>
       </div>
 
+      <!-- 打卡新節點 (送審/催稿/收回/修改/校對) -->
       <div class="bg-gray-50 border border-gray-300 p-4 mb-5">
-        <h4 class="text-xs font-bold text-gray-800 uppercase mb-2">＋ 記錄新進度節點（時間戳記）</h4>
+        <h4 class="text-xs font-bold text-gray-800 uppercase mb-2">＋ 打卡記錄進度時間戳記</h4>
         <div class="grid grid-cols-3 gap-2 mb-2">
-          <input type="text" id="mStage" placeholder="階段 (初審/復審/排版)" class="border border-gray-300 p-1.5 text-xs bg-white outline-none focus:border-indigo-600">
-          <input type="text" id="mTaskName" placeholder="任務 (送審/作者修訂/校對)" class="border border-gray-300 p-1.5 text-xs bg-white outline-none focus:border-indigo-600">
-          <input type="text" id="mAssignee" placeholder="審查人 / 負責人" class="border border-gray-300 p-1.5 text-xs bg-white outline-none focus:border-indigo-600">
+          <select id="mStage" class="border border-gray-300 p-1.5 text-xs bg-white outline-none">
+            <option value="初審">第一次初審</option>
+            <option value="作者修改">作者修訂論文</option>
+            <option value="復審">第二次復審</option>
+            <option value="三審">第三次審查</option>
+            <option value="主編定奪">請主編定奪</option>
+            <option value="校編校對">英文摘要/第一校/二校/三校</option>
+            <option value="DOI申請">DOI 申請與回覆</option>
+          </select>
+          <input type="text" id="mTaskName" placeholder="任務 (如 送初審/評審收回/作者回覆)" class="border border-gray-300 p-1.5 text-xs bg-white outline-none">
+          <input type="text" id="mAssignee" placeholder="審查人 / 責任編輯 / 作者" class="border border-gray-300 p-1.5 text-xs bg-white outline-none">
         </div>
         <div class="grid grid-cols-3 gap-2 mb-2">
           <div>
-            <label class="text-[10px] font-bold text-gray-500 uppercase">通知日期</label>
-            <input type="date" id="mNoticeDate" class="w-full border border-gray-300 p-1 text-xs bg-white outline-none focus:border-indigo-600">
+            <label class="text-[10px] font-bold text-gray-500 uppercase">通知/送出日期</label>
+            <input type="date" id="mNoticeDate" class="w-full border border-gray-300 p-1 text-xs bg-white outline-none">
           </div>
           <div>
             <label class="text-[10px] font-bold text-gray-500 uppercase">回覆期限</label>
-            <input type="date" id="mDueDate" class="w-full border border-gray-300 p-1 text-xs bg-white outline-none focus:border-indigo-600">
+            <input type="date" id="mDueDate" class="w-full border border-gray-300 p-1 text-xs bg-white outline-none">
           </div>
           <div>
-            <label class="text-[10px] font-bold text-gray-500 uppercase">當前狀態</label>
-            <select id="mStatus" class="w-full border border-gray-300 p-1 text-xs bg-white outline-none focus:border-indigo-600">
+            <label class="text-[10px] font-bold text-gray-500 uppercase">目前任務狀態</label>
+            <select id="mStatus" class="w-full border border-gray-300 p-1 text-xs bg-white outline-none">
               <option value="進行中">進行中</option>
               <option value="已完成">已完成</option>
               <option value="已逾期">已逾期</option>
@@ -386,7 +552,7 @@
         </div>
         <div class="flex justify-end mt-2">
           <button onclick="handleAddMilestone()" class="px-3 py-1 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold border border-indigo-900 transition">
-            打卡記錄
+            打卡存檔
           </button>
         </div>
       </div>
@@ -398,10 +564,14 @@
   <script>
     let globalArticles = [];
     let globalLogs = [];
-    let globalAuditLogs = [];
     let currentSelectedArticleId = "";
     let statusChartInstance = null;
     let currentUser = null;
+
+    // 分頁
+    let filteredArticles = [];
+    let currentPage = 1;
+    let pageSize = 10;
 
     window.onload = function() {
       const savedUser = sessionStorage.getItem("tjoc_user");
@@ -414,7 +584,7 @@
       }
     };
 
-    // 登入處理 (直接透過 GET 比對，並直接輸出真實錯誤字串)
+    // 登入
     async function handleLogin(e) {
       e.preventDefault();
       const uInput = document.getElementById('loginUsername').value.trim();
@@ -429,36 +599,18 @@
       try {
         const loginUrl = `${API_URL}?action=login&username=${encodeURIComponent(uInput)}&password=${encodeURIComponent(pInput)}`;
         const res = await fetch(loginUrl, { method: "GET" });
-
-        if (!res.ok) {
-          throw new Error(`伺服器 HTTP 狀態碼錯誤：${res.status} ${res.statusText}`);
-        }
-
         const result = await res.json();
         
         if (result.status === "success") {
           currentUser = result.user;
           sessionStorage.setItem("tjoc_user", JSON.stringify(currentUser));
           enterApp();
-
-          // 在背景發送一筆登入稽核日誌
-          fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({
-              action: "recordLoginAudit",
-              operatorUsername: currentUser.username,
-              operatorName: currentUser.displayName
-            })
-          }).catch(() => {});
-
         } else {
           errBox.innerText = result.message || "帳號或密碼錯誤！";
           errBox.classList.remove('hidden');
         }
       } catch (err) {
-        console.error("登入詳細錯誤:", err);
-        errBox.innerText = `通訊錯誤：${err.message || err}。請確認 Google Apps Script 權限設為「所有人 (Anyone)」並發布新版本！`;
+        errBox.innerText = `通訊錯誤：${err.message || err}`;
         errBox.classList.remove('hidden');
       } finally {
         btn.innerText = "登入系統";
@@ -471,7 +623,6 @@
       document.getElementById('mainApp').classList.remove('hidden');
       document.getElementById('currentUserDisplay').innerText = `${currentUser.displayName} (${currentUser.role})`;
       document.getElementById('formReceivedDate').value = new Date().toISOString().split('T')[0];
-      applyRoleUI();
       fetchData();
     }
 
@@ -480,14 +631,20 @@
       window.location.reload();
     }
 
-    function applyRoleUI() {
-      if (currentUser && currentUser.role === "assistant_editor") {
-        document.getElementById('auditSection').classList.add('hidden');
-      } else {
-        document.getElementById('auditSection').classList.remove('hidden');
+    // 分頁切換 Tab 控制
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('nav button').forEach(el => el.classList.remove('tab-active'));
+
+      document.getElementById(tabId).classList.remove('hidden');
+      document.getElementById(`btn-${tabId}`).classList.add('tab-active');
+
+      if (tabId === 'tab-dashboard' && statusChartInstance) {
+        statusChartInstance.resize();
       }
     }
 
+    // 載入資料
     async function fetchData() {
       if (!API_URL) return;
       try {
@@ -496,17 +653,19 @@
         if (data.status === "success") {
           globalArticles = data.articles || [];
           globalLogs = data.logs || [];
-          globalAuditLogs = data.auditLogs || [];
           renderDashboard();
-          renderArticlesTable(globalArticles);
+          handleSearch();
+          renderReviewersTab();
+          renderEditorTab();
+          renderPublicationTab();
           renderReminders();
-          renderAuditLogs();
         }
       } catch (e) {
         console.error("資料載入失敗:", e);
       }
     }
 
+    // TAB 1: Dashboard
     function renderDashboard() {
       document.getElementById('statTotal').innerText = globalArticles.length;
       const inReview = globalArticles.filter(a => (a.current_status || "").includes("審") || (a.current_status || "").includes("修")).length;
@@ -536,12 +695,7 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: { boxWidth: 10, font: { size: 10, weight: 'bold' } }
-            }
-          }
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10, weight: 'bold' } } } }
         }
       });
     }
@@ -563,7 +717,7 @@
           tbody.innerHTML += `
             <tr class="hover:bg-gray-50 border-b border-gray-100">
               <td class="p-2 font-mono font-bold text-indigo-700">${l.article_id}</td>
-              <td class="p-2 text-gray-800">${l.task_name || l.stage}</td>
+              <td class="p-2 text-gray-800">${l.stage} - ${l.task_name}</td>
               <td class="p-2 text-gray-600">${l.assignee || "-"}</td>
               <td class="p-2 font-mono ${isOverdue ? 'text-red-700 font-bold' : 'text-gray-600'}">${l.due_date}</td>
               <td class="p-2">
@@ -578,19 +732,53 @@
       document.getElementById('statOverdue').innerText = overdue;
     }
 
-    function renderArticlesTable(articles) {
+    // TAB 2: 稿件審查進度清單 (分頁)
+    function handleSearch() {
+      const q = document.getElementById('searchBox').value.toLowerCase();
+      filteredArticles = globalArticles.filter(a => 
+        (a.article_id || "").toLowerCase().includes(q) ||
+        (a.title || "").toLowerCase().includes(q) ||
+        (a.corresponding_author || "").toLowerCase().includes(q)
+      );
+      currentPage = 1;
+      renderArticlesTable();
+    }
+
+    function changePageSize(sz) {
+      pageSize = parseInt(sz, 10);
+      currentPage = 1;
+      renderArticlesTable();
+    }
+
+    function prevPage() { if (currentPage > 1) { currentPage--; renderArticlesTable(); } }
+    function nextPage() {
+      const totalPages = Math.ceil(filteredArticles.length / pageSize) || 1;
+      if (currentPage < totalPages) { currentPage++; renderArticlesTable(); }
+    }
+    function goToPage(p) { currentPage = p; renderArticlesTable(); }
+
+    function renderArticlesTable() {
       const tbody = document.getElementById('articlesTableBody');
       tbody.innerHTML = "";
-      if (articles.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">目前尚無稿件資料</td></tr>`;
+      const total = filteredArticles.length;
+      document.getElementById('tableTotalInfo').innerText = `共 ${total} 筆`;
+
+      if (total === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-400">無符合之稿件</td></tr>`;
+        document.getElementById('pageDisplayInfo').innerText = `顯示第 0 至 0 筆`;
+        document.getElementById('pageNumbers').innerHTML = '';
         return;
       }
 
+      const totalPages = Math.ceil(total / pageSize);
+      const start = (currentPage - 1) * pageSize;
+      const end = Math.min(start + pageSize, total);
+      const rows = filteredArticles.slice(start, end);
       const isAdmin = currentUser && currentUser.role === "admin";
 
-      articles.forEach(a => {
-        const deleteBtn = isAdmin ? `
-          <button onclick="handleDeleteArticle('${a.article_id}', '${escapeQuotes(a.title)}')" class="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold transition" title="刪除稿件">
+      rows.forEach(a => {
+        const delBtn = isAdmin ? `
+          <button onclick="handleDeleteArticle('${a.article_id}', '${escapeQuotes(a.title)}')" class="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold" title="刪除">
             <i class="fas fa-trash-alt"></i>
           </button>` : '';
 
@@ -606,50 +794,161 @@
                 ${a.current_status || "形式審查中"}
               </span>
             </td>
+            <td class="p-3 font-bold ${a.final_decision ? 'text-emerald-700' : 'text-gray-400'}">${a.final_decision || "-"}</td>
             <td class="p-3 text-center space-x-1 whitespace-nowrap">
-              <button onclick="openTimeline('${a.article_id}', '${escapeQuotes(a.title)}')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition" title="歷程">
+              <button onclick="openTimeline('${a.article_id}', '${escapeQuotes(a.title)}')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold" title="時間戳記歷程">
                 <i class="fas fa-history mr-1"></i>歷程
               </button>
-              <button onclick="openEditModal('${a.article_id}')" class="px-2 py-1 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-300 text-xs font-bold transition" title="編輯">
+              <button onclick="openEditModal('${a.article_id}')" class="px-2 py-1 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-300 text-xs font-bold" title="編輯">
                 <i class="fas fa-edit mr-1"></i>編輯
               </button>
-              ${deleteBtn}
+              ${delBtn}
+            </td>
+          </tr>
+        `;
+      });
+
+      document.getElementById('pageDisplayInfo').innerText = `顯示第 ${start + 1} 至 ${end} 筆，共 ${total} 筆`;
+      document.getElementById('btnPrevPage').disabled = (currentPage === 1);
+      document.getElementById('btnNextPage').disabled = (currentPage === totalPages);
+
+      const pn = document.getElementById('pageNumbers');
+      pn.innerHTML = '';
+      for (let p = Math.max(1, currentPage - 2); p <= Math.min(totalPages, currentPage + 2); p++) {
+        pn.innerHTML += `<button onclick="goToPage(${p})" class="px-3 py-1 border text-xs font-bold ${p === currentPage ? 'bg-indigo-700 text-white border-indigo-900' : 'bg-white text-gray-700 border-gray-300'}">${p}</button>`;
+      }
+    }
+
+    // TAB 3: 01 審查人推薦與徵詢
+    function renderReviewersTab(kw = "") {
+      const tbody = document.getElementById('reviewerTableBody');
+      tbody.innerHTML = "";
+      let list = globalArticles;
+      if (kw) {
+        list = list.filter(a => 
+          (a.article_id || "").toLowerCase().includes(kw.toLowerCase()) ||
+          (a.title || "").toLowerCase().includes(kw.toLowerCase()) ||
+          (a.recommended_reviewers || "").toLowerCase().includes(kw.toLowerCase()) ||
+          (a.reviewer_inquiry_log || "").toLowerCase().includes(kw.toLowerCase())
+        );
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400">查無審查人記錄</td></tr>`;
+        return;
+      }
+
+      list.forEach(a => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-gray-50 border-b border-gray-200">
+            <td class="p-3 font-mono font-bold text-gray-900">${a.article_id}</td>
+            <td class="p-3 max-w-xs">
+              <div class="font-bold text-gray-800 truncate" title="${a.title}">${a.title}</div>
+              <div class="text-[11px] text-gray-500">${a.corresponding_author} (${a.affiliation || "無機構"})</div>
+            </td>
+            <td class="p-3 max-w-xs text-gray-700 whitespace-pre-line text-[11px]">${a.recommended_reviewers || "<span class='text-gray-400'>待編委推薦</span>"}</td>
+            <td class="p-3 max-w-xs text-gray-600 whitespace-pre-line text-[11px]">${a.reviewer_inquiry_log || "<span class='text-gray-400'>尚無詢問歷程</span>"}</td>
+            <td class="p-3 text-[11px]">
+              <div>初審：<span class="font-bold text-indigo-700">${a.agreed_reviewer_1 || "-"}</span></div>
+              <div>復審：<span class="font-bold text-indigo-700">${a.agreed_reviewer_2 || "-"}</span></div>
+            </td>
+            <td class="p-3 text-center">
+              <button onclick="openEditModal('${a.article_id}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold">
+                登記/編輯
+              </button>
             </td>
           </tr>
         `;
       });
     }
 
-    function renderAuditLogs() {
-      const tbody = document.getElementById('auditTableBody');
-      document.getElementById('auditLogCount').innerText = `${globalAuditLogs.length} 筆記錄`;
-      tbody.innerHTML = "";
+    function filterReviewerTable(val) {
+      renderReviewersTab(val.trim());
+    }
 
-      if (globalAuditLogs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-gray-400">暫無紀錄</td></tr>`;
+    // TAB 4: 請主編定奪專區
+    function renderEditorTab() {
+      const tbody = document.getElementById('editorTableBody');
+      tbody.innerHTML = "";
+      
+      const pendingList = globalArticles.filter(a => 
+        (a.current_status || "").includes("定奪") || 
+        ((a.current_status || "").includes("審") && !a.final_decision)
+      );
+
+      document.getElementById('editorPendingCount').innerText = `待處理：${pendingList.length} 篇`;
+
+      if (pendingList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400">目前無待主編定奪之稿件</td></tr>`;
         return;
       }
 
-      const sorted = [...globalAuditLogs].reverse();
-      sorted.slice(0, 50).forEach(l => {
-        let badgeClass = "bg-gray-100 text-gray-700 border-gray-300";
-        if (l.action_type === "CREATE") badgeClass = "bg-emerald-50 text-emerald-800 border-emerald-300";
-        if (l.action_type === "UPDATE") badgeClass = "bg-blue-50 text-blue-800 border-blue-300";
-        if (l.action_type === "DELETE") badgeClass = "bg-red-50 text-red-800 border-red-300";
-        if (l.action_type === "MILESTONE") badgeClass = "bg-purple-50 text-purple-800 border-purple-300";
-
+      pendingList.forEach(a => {
         tbody.innerHTML += `
-          <tr class="hover:bg-gray-50 border-b border-gray-100">
-            <td class="p-2 font-mono text-gray-500 whitespace-nowrap">${l.timestamp}</td>
-            <td class="p-2 font-medium text-gray-800">${l.operator_name} <span class="text-gray-400 font-mono text-[11px]">(${l.operator_username})</span></td>
-            <td class="p-2"><span class="px-2 py-0.5 border text-[10px] font-bold ${badgeClass}">${l.action_type}</span></td>
-            <td class="p-2 font-mono font-bold text-indigo-700">${l.target_id || "-"}</td>
-            <td class="p-2 text-gray-600 max-w-sm truncate" title="${l.details}">${l.details}</td>
+          <tr class="hover:bg-gray-50 border-b border-gray-200">
+            <td class="p-3 font-mono font-bold text-red-700">${a.article_id}</td>
+            <td class="p-3 font-mono text-gray-500">${a.received_date || "-"}</td>
+            <td class="p-3 font-medium text-gray-900 max-w-xs truncate" title="${a.title}">${a.title}</td>
+            <td class="p-3 text-gray-700">${a.corresponding_author}</td>
+            <td class="p-3"><span class="px-2 py-0.5 bg-red-50 text-red-700 border border-red-200 font-bold">${a.current_status}</span></td>
+            <td class="p-3 text-gray-600 text-[11px]">${a.editor_decision_notes || "待主編批示"}</td>
+            <td class="p-3 text-center">
+              <button onclick="openEditModal('${a.article_id}')" class="px-3 py-1 bg-red-700 hover:bg-red-800 text-white text-xs font-bold border border-red-900">
+                裁定決議
+              </button>
+            </td>
           </tr>
         `;
       });
     }
 
+    // TAB 5: 04 待刊與校對排版
+    function renderPublicationTab() {
+      const tbody = document.getElementById('publicationTableBody');
+      tbody.innerHTML = "";
+      
+      const pubList = globalArticles.filter(a => 
+        (a.current_status || "").includes("刊") || 
+        (a.final_decision || "").includes("同意") || 
+        (a.final_decision || "").includes("通過")
+      );
+
+      document.getElementById('pubCount').innerText = `待刊總數：${pubList.length} 篇`;
+
+      if (pubList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400">目前無進入待刊流程之稿件</td></tr>`;
+        return;
+      }
+
+      pubList.forEach(a => {
+        // 抓出校對相關時間戳記
+        const logs = globalLogs.filter(l => l.article_id === a.article_id && (l.stage || "").includes("校"));
+        const logText = logs.length > 0 ? logs.map(l => `${l.task_name}(${l.status})`).join(", ") : "待啟動校對";
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-gray-50 border-b border-gray-200">
+            <td class="p-3 font-mono font-bold text-gray-900">${a.article_id}</td>
+            <td class="p-3 max-w-xs">
+              <div class="font-bold text-gray-800 truncate" title="${a.title}">${a.title}</div>
+              <div class="text-[11px] text-gray-500">${a.corresponding_author}</div>
+            </td>
+            <td class="p-3 font-bold text-emerald-800">${a.issue_no || "<span class='text-gray-400'>待排期</span>"}</td>
+            <td class="p-3 font-mono text-[11px] text-gray-700">${a.doi_no || "-"}</td>
+            <td class="p-3 text-[11px] text-gray-600">${logText}</td>
+            <td class="p-3 text-center space-x-1">
+              <button onclick="openTimeline('${a.article_id}', '${escapeQuotes(a.title)}')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold">
+                校對打卡
+              </button>
+              <button onclick="openEditModal('${a.article_id}')" class="px-2 py-1 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-300 text-xs font-bold">
+                排版設定
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // Modal 與 CRUD
     async function handleCreateArticle(e) {
       e.preventDefault();
       const btn = document.getElementById('btnSubmitArticle');
@@ -660,7 +959,6 @@
         action: "createArticle",
         operatorUsername: currentUser.username,
         operatorName: currentUser.displayName,
-        operatorRole: currentUser.role,
         data: {
           article_id: document.getElementById('formArticleId').value.trim(),
           received_date: document.getElementById('formReceivedDate').value,
@@ -681,7 +979,7 @@
         });
         const result = await res.json();
         if (result.status === "success") {
-          alert("稿件新增成功！已記錄於稽核日誌。");
+          alert("稿件新增成功！");
           closeModal('newArticleModal');
           document.getElementById('newArticleForm').reset();
           fetchData();
@@ -699,25 +997,16 @@
       if (!a) return;
       document.getElementById('editArticleId').value = a.article_id;
       document.getElementById('editTitle').value = a.title || "";
-      document.getElementById('editCategory').value = a.category || "一般論文";
       document.getElementById('editCurrentStatus').value = a.current_status || "形式審查中";
-      document.getElementById('editAuthor').value = a.corresponding_author || "";
-      document.getElementById('editEmail').value = a.email || "";
-      document.getElementById('editAffiliation').value = a.affiliation || "";
+      document.getElementById('editFinalDecision').value = a.final_decision || "";
       
-      const finalDecisionInput = document.getElementById('editFinalDecision');
-      finalDecisionInput.value = a.final_decision || "";
-
-      if (currentUser && currentUser.role === "assistant_editor") {
-        finalDecisionInput.disabled = true;
-        finalDecisionInput.classList.add("bg-gray-200", "cursor-not-allowed");
-        finalDecisionInput.placeholder = "僅主編與執行編輯可填寫";
-      } else {
-        finalDecisionInput.disabled = false;
-        finalDecisionInput.classList.remove("bg-gray-200", "cursor-not-allowed");
-      }
-
+      document.getElementById('editRecommendedReviewers').value = a.recommended_reviewers || "";
+      document.getElementById('editReviewerInquiryLog').value = a.reviewer_inquiry_log || "";
+      document.getElementById('editAgreedReviewer1').value = a.agreed_reviewer_1 || "";
+      document.getElementById('editAgreedReviewer2').value = a.agreed_reviewer_2 || "";
       document.getElementById('editIssueNo').value = a.issue_no || "";
+      document.getElementById('editDoiNo').value = a.doi_no || "";
+
       openModal('editArticleModal');
     }
 
@@ -731,17 +1020,17 @@
         action: "updateArticle",
         operatorUsername: currentUser.username,
         operatorName: currentUser.displayName,
-        operatorRole: currentUser.role,
         data: {
           article_id: document.getElementById('editArticleId').value,
           title: document.getElementById('editTitle').value.trim(),
-          category: document.getElementById('editCategory').value,
           current_status: document.getElementById('editCurrentStatus').value,
-          corresponding_author: document.getElementById('editAuthor').value.trim(),
-          email: document.getElementById('editEmail').value.trim(),
-          affiliation: document.getElementById('editAffiliation').value.trim(),
           final_decision: document.getElementById('editFinalDecision').value.trim(),
-          issue_no: document.getElementById('editIssueNo').value.trim()
+          recommended_reviewers: document.getElementById('editRecommendedReviewers').value.trim(),
+          reviewer_inquiry_log: document.getElementById('editReviewerInquiryLog').value.trim(),
+          agreed_reviewer_1: document.getElementById('editAgreedReviewer1').value.trim(),
+          agreed_reviewer_2: document.getElementById('editAgreedReviewer2').value.trim(),
+          issue_no: document.getElementById('editIssueNo').value.trim(),
+          doi_no: document.getElementById('editDoiNo').value.trim()
         }
       };
 
@@ -753,7 +1042,7 @@
         });
         const result = await res.json();
         if (result.status === "success") {
-          alert("稿件資料修改成功！");
+          alert("資料已成功更新！");
           closeModal('editArticleModal');
           fetchData();
         } else {
@@ -762,22 +1051,19 @@
       } catch (err) {
         alert("修改失敗：" + err);
       } finally {
-        btn.innerText = "儲存修改";
+        btn.innerText = "儲存資料";
         btn.disabled = false;
       }
     }
 
     async function handleDeleteArticle(articleId, title) {
-      if (!confirm(`【警告】確定要刪除稿件：${articleId}「${title}」嗎？\n此動作將一併刪除其所有歷程，並被記錄在稽核日誌中！`)) {
-        return;
-      }
+      if (!confirm(`【警告】確定要刪除稿件：${articleId}「${title}」嗎？\n此動作將一併刪除其所有審查與校對歷程！`)) return;
 
       const payload = {
         action: "deleteArticle",
         article_id: articleId,
         operatorUsername: currentUser.username,
-        operatorName: currentUser.displayName,
-        operatorRole: currentUser.role
+        operatorName: currentUser.displayName
       };
 
       try {
@@ -790,21 +1076,19 @@
         if (result.status === "success") {
           alert("稿件已刪除！");
           fetchData();
-        } else {
-          alert(result.message || "刪除失敗");
         }
       } catch (err) {
         alert("刪除失敗：" + err);
       }
     }
 
+    // 歷程打卡
     async function handleAddMilestone() {
       if (!currentSelectedArticleId) return;
       const payload = {
         action: "addMilestone",
         operatorUsername: currentUser.username,
         operatorName: currentUser.displayName,
-        operatorRole: currentUser.role,
         data: {
           article_id: currentSelectedArticleId,
           stage: document.getElementById('mStage').value,
@@ -821,29 +1105,28 @@
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload)
       });
-      alert("進度時間戳記已記錄！");
+      alert("時間戳記已打卡記錄！");
       closeModal('timelineModal');
       fetchData();
     }
 
     function openTimeline(articleId, title) {
       currentSelectedArticleId = articleId;
-      document.getElementById('timelineTitle').innerText = `${articleId} 審查歷程`;
+      document.getElementById('timelineTitle').innerText = `${articleId} 審查與校對歷程`;
       document.getElementById('timelineSub').innerText = title;
       const relatedLogs = globalLogs.filter(l => l.article_id === articleId);
       const container = document.getElementById('timelineContainer');
       container.innerHTML = "";
 
       if (relatedLogs.length === 0) {
-        container.innerHTML = "<div class='text-gray-400'>目前無歷程紀錄</div>";
+        container.innerHTML = "<div class='text-gray-400'>目前尚無任何時間戳記歷程</div>";
       } else {
         relatedLogs.forEach(l => {
           container.innerHTML += `
             <div class="relative pl-3 border-l-2 border-indigo-600 -ml-[18px]">
-              <div class="font-mono text-gray-400">${l.notice_date || "未記錄日期"} - ${l.stage || "任務"}</div>
+              <div class="font-mono text-gray-400">${l.notice_date || "未填日期"} - [${l.stage}]</div>
               <div class="text-gray-900 font-bold mt-0.5">${l.task_name} (${l.assignee || "無特定對象"})</div>
               <div class="text-gray-600 mt-0.5 font-mono">回覆期限：${l.due_date || "無"} | 狀態：<span class="font-bold text-gray-800">${l.status}</span></div>
-              ${l.remarks ? `<div class="bg-gray-50 border border-gray-200 p-2 mt-1 text-gray-600">${l.remarks}</div>` : ''}
             </div>
           `;
         });
@@ -851,16 +1134,7 @@
       openModal('timelineModal');
     }
 
-    function filterArticlesTable() {
-      const q = document.getElementById('searchBox').value.toLowerCase();
-      const filtered = globalArticles.filter(a => 
-        (a.article_id || "").toLowerCase().includes(q) ||
-        (a.title || "").toLowerCase().includes(q) ||
-        (a.corresponding_author || "").toLowerCase().includes(q)
-      );
-      renderArticlesTable(filtered);
-    }
-
+    // 評鑑 Excel 匯出
     function exportToExcel() {
       const sDate = document.getElementById('exportStartDate').value;
       const eDate = document.getElementById('exportEndDate').value;
@@ -893,19 +1167,23 @@
           "論文名稱": a.title,
           "文章類別": a.category,
           "通訊作者": a.corresponding_author,
-          "服務單位/職稱": a.affiliation,
-          "共同作者": a.co_authors,
+          "服務機構/職稱": a.affiliation,
+          "編委推薦審查人": a.recommended_reviewers,
+          "詢問順序與歷程": a.reviewer_inquiry_log,
+          "初審同意人": a.agreed_reviewer_1,
+          "復審同意人": a.agreed_reviewer_2,
           "目前審查狀態": a.current_status,
           "最終審查決議": a.final_decision,
           "刊登期數": a.issue_no,
-          "完整時間戳記與歷程紀錄": historyText
+          "DOI編號": a.doi_no,
+          "審查與校對時間戳記紀錄": historyText
         };
       });
 
       const worksheet = XLSX.utils.json_to_sheet(exportRows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "TJOC評鑑清冊");
-      XLSX.writeFile(workbook, `TJOC稿件評鑑資料_${new Date().toISOString().split('T')[0]}.xlsx`);
+      XLSX.writeFile(workbook, `TJOC學刊評鑑資料_${new Date().toISOString().split('T')[0]}.xlsx`);
     }
 
     function escapeQuotes(str) { return (str || "").replace(/'/g, "\\'"); }
