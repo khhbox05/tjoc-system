@@ -9,213 +9,228 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
-    /* 確保全域扁平化，移除所有原生或焦點陰影 */
-    * {
+    /* 全域純扁平化樣式：消除所有陰影與立體效果 */
+    *, *::before, *::after {
       box-shadow: none !important;
       text-shadow: none !important;
     }
   </style>
 </head>
-<body class="bg-gray-100 text-gray-900 font-sans antialiased">
+<body class="bg-gray-100 text-gray-900 font-sans antialiased min-h-screen">
 
   <script>
-    // 已填入您的 Google Apps Script 部署網址
+    // 已為您配置完成的 Google Apps Script API 網址
     const API_URL = "https://script.google.com/macros/s/AKfycbyXc8jEuEvkY9Sh-eKtiUnf3UYg3XjcbGlpXPMLhHGaIl1_nyYA2NPcfYb1vN56A81JpQ/exec";
   </script>
 
-  <!-- 1. 管理員登入視窗 (扁平化覆蓋層) -->
-  <div id="loginOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center z-50 p-4">
-    <div class="bg-white border-2 border-gray-800 w-full max-w-md p-6">
-      <div class="border-b border-gray-200 pb-4 mb-5 text-center">
-        <span class="inline-block bg-indigo-700 text-white font-bold text-xs px-2.5 py-1 tracking-wider uppercase mb-2">TJOC</span>
-        <h2 class="text-xl font-bold text-gray-900">管理員系統登入</h2>
-        <p class="text-xs text-gray-500 mt-1">請使用 Google 試算表設定之管理員帳號登入</p>
+  <!-- ======================================================= -->
+  <!-- 1. 未登入專屬視窗 (系統內容在此狀態下完全不渲染、不載入) -->
+  <!-- ======================================================= -->
+  <div id="loginView" class="min-h-screen flex items-center justify-center p-4 bg-gray-200">
+    <div class="bg-white border-2 border-gray-800 w-full max-w-md p-8">
+      <div class="border-b border-gray-200 pb-5 mb-6 text-center">
+        <span class="inline-block bg-indigo-700 text-white font-extrabold text-xs px-3 py-1 tracking-wider uppercase mb-3">TJOC</span>
+        <h2 class="text-xl font-extrabold text-gray-900 tracking-tight">稿件與審查管理系統</h2>
+        <p class="text-xs text-gray-500 mt-1">本系統僅限受權管理員登入使用</p>
       </div>
+
       <form onsubmit="handleLogin(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-bold text-gray-700 uppercase mb-1">管理帳號</label>
-          <input type="text" id="loginUsername" required placeholder="帳號" class="w-full border border-gray-300 bg-gray-50 p-2.5 text-sm focus:border-indigo-600 focus:bg-white outline-none">
+          <input type="text" id="loginUsername" required placeholder="請輸入管理帳號" class="w-full border border-gray-300 bg-gray-50 p-2.5 text-xs outline-none focus:border-indigo-600 focus:bg-white transition">
         </div>
         <div>
           <label class="block text-xs font-bold text-gray-700 uppercase mb-1">管理密碼</label>
-          <input type="password" id="loginPassword" required placeholder="密碼" class="w-full border border-gray-300 bg-gray-50 p-2.5 text-sm focus:border-indigo-600 focus:bg-white outline-none">
+          <input type="password" id="loginPassword" required placeholder="請輸入管理密碼" class="w-full border border-gray-300 bg-gray-50 p-2.5 text-xs outline-none focus:border-indigo-600 focus:bg-white transition">
         </div>
-        <div id="loginError" class="text-xs text-red-600 hidden font-bold"></div>
-        <button type="submit" id="btnLogin" class="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-sm tracking-wide border border-indigo-900 transition">
+
+        <div id="loginError" class="text-xs text-red-600 hidden font-bold border border-red-200 bg-red-50 p-2"></div>
+
+        <button type="submit" id="btnLogin" class="w-full py-2.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs uppercase tracking-wider border border-indigo-900 transition">
           登入系統
         </button>
       </form>
+
+      <div class="text-center mt-6 text-[11px] text-gray-400">
+        如需開通權限或重置密碼，請聯繫總主編。
+      </div>
     </div>
   </div>
 
-  <!-- 2. 扁平化導航列 -->
-  <header class="bg-gray-900 text-white border-b border-gray-800 sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <span class="bg-indigo-600 text-white font-extrabold px-2.5 py-1 text-xs tracking-wider">TJOC</span>
-        <h1 class="text-base sm:text-lg font-bold tracking-tight">學刊投稿與審查管理系統</h1>
-      </div>
-      <div class="flex items-center space-x-2">
-        <div class="hidden sm:flex items-center space-x-2 bg-gray-800 px-3 py-1.5 border border-gray-700 text-xs">
-          <i class="fas fa-user-shield text-indigo-400"></i>
-          <span id="currentUserDisplay" class="text-gray-200 font-medium">驗證中...</span>
-        </div>
-        <button onclick="fetchData()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs text-gray-200 border border-gray-700 transition">
-          <i class="fas fa-sync-alt mr-1"></i> 重新整理
-        </button>
-        <button onclick="openModal('newArticleModal')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-xs text-white font-bold border border-indigo-700 transition">
-          <i class="fas fa-plus mr-1"></i> 新增稿件
-        </button>
-        <button onclick="handleLogout()" class="px-3 py-1.5 bg-red-700 hover:bg-red-800 text-xs text-white border border-red-900 transition" title="登出">
-          <i class="fas fa-sign-out-alt"></i>
-        </button>
-      </div>
-    </div>
-  </header>
+  <!-- ======================================================= -->
+  <!-- 2. 系統正式主介面 (預設完全隱藏 hidden，登入成功才顯示) -->
+  <!-- ======================================================= -->
+  <div id="mainApp" class="hidden">
 
-  <!-- 3. 主內容區 -->
-  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-
-    <!-- KPI 統計數據卡片 -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="bg-white border border-gray-300 p-5">
-        <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">總收稿數</div>
-        <div id="statTotal" class="text-3xl font-extrabold text-gray-900 mt-2">--</div>
-        <div class="text-xs text-gray-400 mt-1">TJOC 資料庫全部稿件</div>
-      </div>
-      <div class="bg-white border border-gray-300 p-5">
-        <div class="text-xs font-bold text-amber-700 uppercase tracking-wider">審查 / 修改中</div>
-        <div id="statInReview" class="text-3xl font-extrabold text-amber-700 mt-2">--</div>
-        <div class="text-xs text-gray-400 mt-1">送審中或待修訂</div>
-      </div>
-      <div class="bg-white border border-gray-300 p-5">
-        <div class="text-xs font-bold text-emerald-700 uppercase tracking-wider">已通過 / 待刊</div>
-        <div id="statAccepted" class="text-3xl font-extrabold text-emerald-700 mt-2">--</div>
-        <div class="text-xs text-gray-400 mt-1">校編與刊登程序中</div>
-      </div>
-      <div class="bg-white border border-gray-300 p-5">
-        <div class="text-xs font-bold text-red-700 uppercase tracking-wider">逾期提醒</div>
-        <div id="statOverdue" class="text-3xl font-extrabold text-red-700 mt-2">0</div>
-        <div class="text-xs text-red-500 mt-1">已逾回覆期限項目</div>
-      </div>
-    </section>
-
-    <!-- 視覺化圖表與催辦清單 -->
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div class="bg-white border border-gray-300 p-5">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-gray-700 mb-4 pb-2 border-b border-gray-200">
-          <i class="fas fa-chart-pie mr-1 text-indigo-600"></i> 稿件狀態分佈
-        </h2>
-        <div class="relative h-64">
-          <canvas id="statusChart"></canvas>
+    <!-- 頂部導航列 -->
+    <header class="bg-gray-900 text-white border-b border-gray-800 sticky top-0 z-40">
+      <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <span class="bg-indigo-600 text-white font-extrabold px-2.5 py-1 text-xs tracking-wider">TJOC</span>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight">學刊投稿與審查管理系統</h1>
         </div>
-      </div>
-
-      <div class="bg-white border border-gray-300 p-5 lg:col-span-2">
-        <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-gray-700">
-            <i class="fas fa-bell mr-1 text-amber-600"></i> 重要進度與催辦提醒
-          </h2>
-          <span class="text-xs text-gray-400">依回覆期限排序</span>
-        </div>
-        <div class="overflow-x-auto max-h-64">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-gray-100 text-gray-600 font-bold border-b border-gray-200">
-              <tr>
-                <th class="p-2.5">系統編號</th>
-                <th class="p-2.5">當前任務</th>
-                <th class="p-2.5">對象/審查人</th>
-                <th class="p-2.5">回覆期限</th>
-                <th class="p-2.5">狀態</th>
-              </tr>
-            </thead>
-            <tbody id="reminderTableBody" class="divide-y divide-gray-200">
-              <tr><td colspan="5" class="p-4 text-center text-gray-400">載入中...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- 評鑑資料匯出專區 -->
-    <section class="bg-white border border-gray-300 p-5">
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 class="text-xs font-bold uppercase tracking-wider text-gray-800">
-            <i class="fas fa-file-export mr-1 text-indigo-600"></i> 評鑑清冊匯出中心
-          </h2>
-          <p class="text-xs text-gray-500 mt-1">依時間或關鍵字篩選，一鍵匯出符合評鑑要求之完整時間戳記與歷程紀錄</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <input type="date" id="exportStartDate" class="border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-indigo-600">
-          <span class="text-xs text-gray-400">至</span>
-          <input type="date" id="exportEndDate" class="border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-indigo-600">
-          <input type="text" id="exportKeyword" placeholder="搜尋編號 / 作者" class="border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-700 w-36 outline-none focus:border-indigo-600">
-          <button onclick="exportToExcel()" class="px-3.5 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold border border-indigo-900 transition">
-            <i class="fas fa-download mr-1"></i> 匯出評鑑 Excel
+        <div class="flex items-center space-x-2">
+          <div class="hidden sm:flex items-center space-x-2 bg-gray-800 px-3 py-1.5 border border-gray-700 text-xs">
+            <i class="fas fa-user-shield text-indigo-400"></i>
+            <span id="currentUserDisplay" class="text-gray-200 font-medium">--</span>
+          </div>
+          <button onclick="fetchData()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs text-gray-200 border border-gray-700 transition">
+            <i class="fas fa-sync-alt mr-1"></i> 整理
+          </button>
+          <button onclick="openModal('newArticleModal')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-xs text-white font-bold border border-indigo-700 transition">
+            <i class="fas fa-plus mr-1"></i> 新增稿件
+          </button>
+          <button onclick="handleLogout()" class="px-3 py-1.5 bg-red-700 hover:bg-red-800 text-xs text-white border border-red-900 transition" title="登出系統">
+            <i class="fas fa-sign-out-alt"></i>
           </button>
         </div>
       </div>
-    </section>
+    </header>
 
-    <!-- 稿件總清單 -->
-    <section class="bg-white border border-gray-300 p-5">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-2 border-b border-gray-200">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-gray-800">
-          <i class="fas fa-list-alt mr-1 text-indigo-600"></i> TJOC 稿件總清單
-        </h2>
-        <input type="text" id="searchBox" onkeyup="filterArticlesTable()" placeholder="快速過濾篇名、作者或編號..." class="border border-gray-300 bg-gray-50 px-3 py-1.5 text-xs w-full sm:w-72 outline-none focus:border-indigo-600">
-      </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs" id="articlesTable">
-          <thead class="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
-            <tr>
-              <th class="p-3">系統編號</th>
-              <th class="p-3">收件日</th>
-              <th class="p-3">論文名稱</th>
-              <th class="p-3">通訊作者</th>
-              <th class="p-3">類別</th>
-              <th class="p-3">目前狀態</th>
-              <th class="p-3 text-center">功能操作</th>
-            </tr>
-          </thead>
-          <tbody id="articlesTableBody" class="divide-y divide-gray-200">
-            <tr><td colspan="7" class="p-4 text-center text-gray-400">載入中...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+    <!-- 儀表板與內容主區塊 -->
+    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-    <!-- 操作稽核日誌 (Audit Trail) -->
-    <section id="auditSection" class="bg-white border border-gray-300 p-5">
-      <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
-        <div>
-          <h2 class="text-xs font-bold uppercase tracking-wider text-gray-800">
-            <i class="fas fa-clipboard-list mr-1 text-gray-600"></i> 系統操作稽核日誌（Audit Trail）
-          </h2>
-          <p class="text-xs text-gray-400 mt-0.5">即時記錄所有新增、修改、刪除與打卡歷程</p>
+      <!-- KPI 統計數字卡片 -->
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white border border-gray-300 p-5">
+          <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">總收稿數</div>
+          <div id="statTotal" class="text-3xl font-extrabold text-gray-900 mt-2">--</div>
+          <div class="text-xs text-gray-400 mt-1">TJOC 資料庫全部稿件</div>
         </div>
-        <span class="text-xs font-mono text-gray-400" id="auditLogCount">0 筆記錄</span>
-      </div>
-      <div class="overflow-x-auto max-h-56">
-        <table class="w-full text-left text-xs">
-          <thead class="bg-gray-100 text-gray-600 font-bold border-b border-gray-200">
-            <tr>
-              <th class="p-2.5">時間</th>
-              <th class="p-2.5">操作者</th>
-              <th class="p-2.5">動作</th>
-              <th class="p-2.5">稿件編號</th>
-              <th class="p-2.5">詳細說明</th>
-            </tr>
-          </thead>
-          <tbody id="auditTableBody" class="divide-y divide-gray-200">
-            <tr><td colspan="5" class="p-3 text-center text-gray-400">暫無紀錄</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+        <div class="bg-white border border-gray-300 p-5">
+          <div class="text-xs font-bold text-amber-700 uppercase tracking-wider">審查 / 修改中</div>
+          <div id="statInReview" class="text-3xl font-extrabold text-amber-700 mt-2">--</div>
+          <div class="text-xs text-gray-400 mt-1">送審中或待修訂</div>
+        </div>
+        <div class="bg-white border border-gray-300 p-5">
+          <div class="text-xs font-bold text-emerald-700 uppercase tracking-wider">已通過 / 待刊</div>
+          <div id="statAccepted" class="text-3xl font-extrabold text-emerald-700 mt-2">--</div>
+          <div class="text-xs text-gray-400 mt-1">進入校編刊登流程</div>
+        </div>
+        <div class="bg-white border border-gray-300 p-5">
+          <div class="text-xs font-bold text-red-700 uppercase tracking-wider">逾期提醒</div>
+          <div id="statOverdue" class="text-3xl font-extrabold text-red-700 mt-2">0</div>
+          <div class="text-xs text-red-500 mt-1">已逾回覆期限之任務</div>
+        </div>
+      </section>
 
-  </main>
+      <!-- 統計圖表與重要催辦提醒 -->
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-white border border-gray-300 p-5">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-gray-700 mb-4 pb-2 border-b border-gray-200">
+            <i class="fas fa-chart-pie mr-1 text-indigo-600"></i> 稿件狀態分佈
+          </h2>
+          <div class="relative h-64">
+            <canvas id="statusChart"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white border border-gray-300 p-5 lg:col-span-2">
+          <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-gray-700">
+              <i class="fas fa-bell mr-1 text-amber-600"></i> 重要進度與催辦提醒
+            </h2>
+            <span class="text-xs text-gray-400 font-mono">依期限排序</span>
+          </div>
+          <div class="overflow-x-auto max-h-64">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-gray-100 text-gray-600 font-bold border-b border-gray-200">
+                <tr>
+                  <th class="p-2.5">系統編號</th>
+                  <th class="p-2.5">當前任務</th>
+                  <th class="p-2.5">對象/審查人</th>
+                  <th class="p-2.5">回覆期限</th>
+                  <th class="p-2.5">狀態</th>
+                </tr>
+              </thead>
+              <tbody id="reminderTableBody" class="divide-y divide-gray-200">
+                <tr><td colspan="5" class="p-4 text-center text-gray-400">載入中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 評鑑清冊匯出專區 -->
+      <section class="bg-white border border-gray-300 p-5">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-gray-800">
+              <i class="fas fa-file-export mr-1 text-indigo-600"></i> 評鑑清冊匯出中心
+            </h2>
+            <p class="text-xs text-gray-500 mt-1">選定日期區間或編號，一鍵導出完整生命週期時間戳記紀錄</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <input type="date" id="exportStartDate" class="border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-indigo-600">
+            <span class="text-xs text-gray-400">至</span>
+            <input type="date" id="exportEndDate" class="border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-indigo-600">
+            <input type="text" id="exportKeyword" placeholder="搜尋編號 / 作者" class="border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-700 w-36 outline-none focus:border-indigo-600">
+            <button onclick="exportToExcel()" class="px-3.5 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold border border-indigo-900 transition">
+              <i class="fas fa-download mr-1"></i> 匯出評鑑 Excel
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 稿件總清單 -->
+      <section class="bg-white border border-gray-300 p-5">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-2 border-b border-gray-200">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-gray-800">
+            <i class="fas fa-list-alt mr-1 text-indigo-600"></i> TJOC 稿件總清單
+          </h2>
+          <input type="text" id="searchBox" onkeyup="filterArticlesTable()" placeholder="快速過濾篇名、作者或編號..." class="border border-gray-300 bg-gray-50 px-3 py-1.5 text-xs w-full sm:w-72 outline-none focus:border-indigo-600">
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs" id="articlesTable">
+            <thead class="bg-gray-100 text-gray-700 font-bold border-b border-gray-200">
+              <tr>
+                <th class="p-3">系統編號</th>
+                <th class="p-3">收件日</th>
+                <th class="p-3">論文名稱</th>
+                <th class="p-3">通訊作者</th>
+                <th class="p-3">類別</th>
+                <th class="p-3">目前狀態</th>
+                <th class="p-3 text-center">功能操作</th>
+              </tr>
+            </thead>
+            <tbody id="articlesTableBody" class="divide-y divide-gray-200">
+              <tr><td colspan="7" class="p-4 text-center text-gray-400">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 系統操作稽核日誌 (Audit Trail) -->
+      <section id="auditSection" class="bg-white border border-gray-300 p-5">
+        <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
+          <div>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-gray-800">
+              <i class="fas fa-clipboard-list mr-1 text-gray-600"></i> 系統操作稽核日誌（Audit Trail）
+            </h2>
+            <p class="text-xs text-gray-400 mt-0.5">即時記錄所有新增、修改、刪除與打卡節點</p>
+          </div>
+          <span class="text-xs font-mono text-gray-400" id="auditLogCount">0 筆記錄</span>
+        </div>
+        <div class="overflow-x-auto max-h-56">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-gray-100 text-gray-600 font-bold border-b border-gray-200">
+              <tr>
+                <th class="p-2.5">時間</th>
+                <th class="p-2.5">操作者</th>
+                <th class="p-2.5">動作</th>
+                <th class="p-2.5">稿件編號</th>
+                <th class="p-2.5">詳細說明</th>
+              </tr>
+            </thead>
+            <tbody id="auditTableBody" class="divide-y divide-gray-200">
+              <tr><td colspan="5" class="p-3 text-center text-gray-400">暫無紀錄</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
 
   <!-- Modal 1: 新增稿件 -->
   <div id="newArticleModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center hidden z-50 p-4">
@@ -399,19 +414,19 @@
     let statusChartInstance = null;
     let currentUser = null;
 
+    // 啟動檢查：若尚未登入，絕對不抓取資料、不顯示後台
     window.onload = function() {
-      document.getElementById('formReceivedDate').value = new Date().toISOString().split('T')[0];
       const savedUser = sessionStorage.getItem("tjoc_user");
       if (savedUser) {
         currentUser = JSON.parse(savedUser);
-        document.getElementById('loginOverlay').classList.add('hidden');
-        document.getElementById('currentUserDisplay').innerText = `${currentUser.displayName} (${currentUser.role})`;
-        applyRoleUI();
-        fetchData();
+        enterApp();
+      } else {
+        document.getElementById('loginView').classList.remove('hidden');
+        document.getElementById('mainApp').classList.add('hidden');
       }
     };
 
-    // 登入處理
+    // 登入處理（採用 GET 方式，完全規避 CORS 跨來源預檢問題）
     async function handleLogin(e) {
       e.preventDefault();
       const uInput = document.getElementById('loginUsername').value.trim();
@@ -424,25 +439,21 @@
       errBox.classList.add('hidden');
 
       try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "login", username: uInput, password: pInput })
-        });
+        const loginUrl = `${API_URL}?action=login&username=${encodeURIComponent(uInput)}&password=${encodeURIComponent(pInput)}`;
+        const res = await fetch(loginUrl, { method: "GET" });
         const result = await res.json();
+        
         if (result.status === "success") {
           currentUser = result.user;
           sessionStorage.setItem("tjoc_user", JSON.stringify(currentUser));
-          document.getElementById('loginOverlay').classList.add('hidden');
-          document.getElementById('currentUserDisplay').innerText = `${currentUser.displayName} (${currentUser.role})`;
-          applyRoleUI();
-          fetchData();
+          enterApp();
         } else {
-          errBox.innerText = result.message || "登入失敗";
+          errBox.innerText = result.message || "帳號或密碼錯誤！";
           errBox.classList.remove('hidden');
         }
       } catch (err) {
-        errBox.innerText = "通訊失敗，請檢查 Apps Script 設定！";
+        console.error("登入錯誤:", err);
+        errBox.innerText = "通訊失敗，請確認網路或 Apps Script 部署設定！";
         errBox.classList.remove('hidden');
       } finally {
         btn.innerText = "登入系統";
@@ -450,12 +461,23 @@
       }
     }
 
+    // 正式進入系統介面
+    function enterApp() {
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('mainApp').classList.remove('hidden');
+      document.getElementById('currentUserDisplay').innerText = `${currentUser.displayName} (${currentUser.role})`;
+      document.getElementById('formReceivedDate').value = new Date().toISOString().split('T')[0];
+      applyRoleUI();
+      fetchData();
+    }
+
+    // 登出系統
     function handleLogout() {
       sessionStorage.removeItem("tjoc_user");
       window.location.reload();
     }
 
-    // 依角色隱藏或呈現 UI
+    // 依角色隱藏限制模組
     function applyRoleUI() {
       if (currentUser && currentUser.role === "assistant_editor") {
         document.getElementById('auditSection').classList.add('hidden');
@@ -464,9 +486,9 @@
       }
     }
 
-    // 載入資料
+    // 讀取後端資料
     async function fetchData() {
-      if (!API_URL || API_URL.includes("YOUR_SCRIPT_ID")) return;
+      if (!API_URL) return;
       try {
         const res = await fetch(API_URL);
         const data = await res.json();
@@ -480,11 +502,11 @@
           renderAuditLogs();
         }
       } catch (e) {
-        console.error("載入失敗:", e);
+        console.error("資料載入失敗:", e);
       }
     }
 
-    // 儀表板計算
+    // 渲染儀表板統計與圖表
     function renderDashboard() {
       document.getElementById('statTotal').innerText = globalArticles.length;
       const inReview = globalArticles.filter(a => (a.current_status || "").includes("審") || (a.current_status || "").includes("修")).length;
@@ -524,7 +546,7 @@
       });
     }
 
-    // 催辦提醒清單
+    // 渲染催辦提醒清單
     function renderReminders() {
       const today = new Date().toISOString().split('T')[0];
       const pending = globalLogs.filter(l => l.due_date && l.status !== "已完成");
@@ -557,7 +579,7 @@
       document.getElementById('statOverdue').innerText = overdue;
     }
 
-    // 渲染稿件表格
+    // 渲染稿件清單總表
     function renderArticlesTable(articles) {
       const tbody = document.getElementById('articlesTableBody');
       tbody.innerHTML = "";
@@ -600,14 +622,14 @@
       });
     }
 
-    // 渲染稽核日誌
+    // 渲染操作日誌
     function renderAuditLogs() {
       const tbody = document.getElementById('auditTableBody');
       document.getElementById('auditLogCount').innerText = `${globalAuditLogs.length} 筆記錄`;
       tbody.innerHTML = "";
 
       if (globalAuditLogs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-gray-400">目前尚無稽核日誌</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-3 text-center text-gray-400">暫無紀錄</td></tr>`;
         return;
       }
 
@@ -631,7 +653,7 @@
       });
     }
 
-    // 新增稿件
+    // 新增稿件送出
     async function handleCreateArticle(e) {
       e.preventDefault();
       const btn = document.getElementById('btnSubmitArticle');
@@ -691,7 +713,6 @@
       const finalDecisionInput = document.getElementById('editFinalDecision');
       finalDecisionInput.value = a.final_decision || "";
 
-      // 若為助理編輯，鎖定最終決議
       if (currentUser && currentUser.role === "assistant_editor") {
         finalDecisionInput.disabled = true;
         finalDecisionInput.classList.add("bg-gray-200", "cursor-not-allowed");
@@ -705,7 +726,7 @@
       openModal('editArticleModal');
     }
 
-    // 儲存修改
+    // 儲存稿件修改
     async function handleUpdateArticle(e) {
       e.preventDefault();
       const btn = document.getElementById('btnUpdateArticle');
@@ -784,7 +805,7 @@
       }
     }
 
-    // 歷程打卡
+    // 歷程時間戳記打卡
     async function handleAddMilestone() {
       if (!currentSelectedArticleId) return;
       const payload = {
@@ -813,6 +834,7 @@
       fetchData();
     }
 
+    // 開啟歷程時間軸
     function openTimeline(articleId, title) {
       currentSelectedArticleId = articleId;
       document.getElementById('timelineTitle').innerText = `${articleId} 審查歷程`;
@@ -838,6 +860,7 @@
       openModal('timelineModal');
     }
 
+    // 快速過濾總表
     function filterArticlesTable() {
       const q = document.getElementById('searchBox').value.toLowerCase();
       const filtered = globalArticles.filter(a => 
