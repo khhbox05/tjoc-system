@@ -9,7 +9,6 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
-    /* 全域純扁平化樣式：消除所有陰影與立體效果 */
     *, *::before, *::after {
       box-shadow: none !important;
       text-shadow: none !important;
@@ -19,13 +18,11 @@
 <body class="bg-gray-100 text-gray-900 font-sans antialiased min-h-screen">
 
   <script>
-    // 已為您配置完成的 Google Apps Script API 網址
+    // 請確認為最新的 Google Apps Script 部署網址
     const API_URL = "https://script.google.com/macros/s/AKfycbyXc8jEuEvkY9Sh-eKtiUnf3UYg3XjcbGlpXPMLhHGaIl1_nyYA2NPcfYb1vN56A81JpQ/exec";
   </script>
 
-  <!-- ======================================================= -->
-  <!-- 1. 未登入專屬視窗 (系統內容在此狀態下完全不渲染、不載入) -->
-  <!-- ======================================================= -->
+  <!-- 1. 未登入專屬視窗 -->
   <div id="loginView" class="min-h-screen flex items-center justify-center p-4 bg-gray-200">
     <div class="bg-white border-2 border-gray-800 w-full max-w-md p-8">
       <div class="border-b border-gray-200 pb-5 mb-6 text-center">
@@ -52,17 +49,13 @@
       </form>
 
       <div class="text-center mt-6 text-[11px] text-gray-400">
-        如需開通權限或重置密碼，請聯繫總主編。
+        若需變更權限或帳密，請在 Google 試算表 Users 表修改。
       </div>
     </div>
   </div>
 
-  <!-- ======================================================= -->
-  <!-- 2. 系統正式主介面 (預設完全隱藏 hidden，登入成功才顯示) -->
-  <!-- ======================================================= -->
+  <!-- 2. 系統正式主介面 -->
   <div id="mainApp" class="hidden">
-
-    <!-- 頂部導航列 -->
     <header class="bg-gray-900 text-white border-b border-gray-800 sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         <div class="flex items-center space-x-3">
@@ -87,10 +80,8 @@
       </div>
     </header>
 
-    <!-- 儀表板與內容主區塊 -->
     <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-
-      <!-- KPI 統計數字卡片 -->
+      <!-- KPI 統計數字 -->
       <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white border border-gray-300 p-5">
           <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">總收稿數</div>
@@ -114,7 +105,7 @@
         </div>
       </section>
 
-      <!-- 統計圖表與重要催辦提醒 -->
+      <!-- 圖表與提醒 -->
       <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="bg-white border border-gray-300 p-5">
           <h2 class="text-xs font-bold uppercase tracking-wider text-gray-700 mb-4 pb-2 border-b border-gray-200">
@@ -151,14 +142,14 @@
         </div>
       </section>
 
-      <!-- 評鑑清冊匯出專區 -->
+      <!-- 匯出專區 -->
       <section class="bg-white border border-gray-300 p-5">
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 class="text-xs font-bold uppercase tracking-wider text-gray-800">
               <i class="fas fa-file-export mr-1 text-indigo-600"></i> 評鑑清冊匯出中心
             </h2>
-            <p class="text-xs text-gray-500 mt-1">選定日期區間或編號，一鍵導出完整生命週期時間戳記紀錄</p>
+            <p class="text-xs text-gray-500 mt-1">選定日期區間或編號，一鍵導出完整時間戳記評鑑紀錄</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <input type="date" id="exportStartDate" class="border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-indigo-600">
@@ -172,7 +163,7 @@
         </div>
       </section>
 
-      <!-- 稿件總清單 -->
+      <!-- 稿件清單 -->
       <section class="bg-white border border-gray-300 p-5">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-2 border-b border-gray-200">
           <h2 class="text-xs font-bold uppercase tracking-wider text-gray-800">
@@ -200,7 +191,7 @@
         </div>
       </section>
 
-      <!-- 系統操作稽核日誌 (Audit Trail) -->
+      <!-- 系統稽核日誌 -->
       <section id="auditSection" class="bg-white border border-gray-300 p-5">
         <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
           <div>
@@ -228,7 +219,6 @@
           </table>
         </div>
       </section>
-
     </main>
   </div>
 
@@ -290,7 +280,7 @@
     </div>
   </div>
 
-  <!-- Modal 2: 編輯稿件 (UPDATE) -->
+  <!-- Modal 2: 編輯稿件 -->
   <div id="editArticleModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center hidden z-50 p-4">
     <div class="bg-white border-2 border-gray-800 w-full max-w-xl p-6 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center pb-3 border-b border-gray-200 mb-4">
@@ -358,7 +348,7 @@
     </div>
   </div>
 
-  <!-- Modal 3: 歷程時間軸與打卡 -->
+  <!-- Modal 3: 歷程時間軸 -->
   <div id="timelineModal" class="fixed inset-0 bg-gray-900 bg-opacity-70 flex items-center justify-center hidden z-50 p-4">
     <div class="bg-white border-2 border-gray-800 w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center pb-3 border-b border-gray-200 mb-4">
@@ -369,7 +359,6 @@
         <button onclick="closeModal('timelineModal')" class="text-gray-500 hover:text-gray-800 text-lg font-bold">&times;</button>
       </div>
 
-      <!-- 打卡新節點 -->
       <div class="bg-gray-50 border border-gray-300 p-4 mb-5">
         <h4 class="text-xs font-bold text-gray-800 uppercase mb-2">＋ 記錄新進度節點（時間戳記）</h4>
         <div class="grid grid-cols-3 gap-2 mb-2">
@@ -414,7 +403,6 @@
     let statusChartInstance = null;
     let currentUser = null;
 
-    // 啟動檢查：若尚未登入，絕對不抓取資料、不顯示後台
     window.onload = function() {
       const savedUser = sessionStorage.getItem("tjoc_user");
       if (savedUser) {
@@ -426,7 +414,7 @@
       }
     };
 
-    // 登入處理（採用 GET 方式，完全規避 CORS 跨來源預檢問題）
+    // 登入處理 (直接透過 GET 比對，並直接輸出真實錯誤字串)
     async function handleLogin(e) {
       e.preventDefault();
       const uInput = document.getElementById('loginUsername').value.trim();
@@ -441,19 +429,36 @@
       try {
         const loginUrl = `${API_URL}?action=login&username=${encodeURIComponent(uInput)}&password=${encodeURIComponent(pInput)}`;
         const res = await fetch(loginUrl, { method: "GET" });
+
+        if (!res.ok) {
+          throw new Error(`伺服器 HTTP 狀態碼錯誤：${res.status} ${res.statusText}`);
+        }
+
         const result = await res.json();
         
         if (result.status === "success") {
           currentUser = result.user;
           sessionStorage.setItem("tjoc_user", JSON.stringify(currentUser));
           enterApp();
+
+          // 在背景發送一筆登入稽核日誌
+          fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+              action: "recordLoginAudit",
+              operatorUsername: currentUser.username,
+              operatorName: currentUser.displayName
+            })
+          }).catch(() => {});
+
         } else {
           errBox.innerText = result.message || "帳號或密碼錯誤！";
           errBox.classList.remove('hidden');
         }
       } catch (err) {
-        console.error("登入錯誤:", err);
-        errBox.innerText = "通訊失敗，請確認網路或 Apps Script 部署設定！";
+        console.error("登入詳細錯誤:", err);
+        errBox.innerText = `通訊錯誤：${err.message || err}。請確認 Google Apps Script 權限設為「所有人 (Anyone)」並發布新版本！`;
         errBox.classList.remove('hidden');
       } finally {
         btn.innerText = "登入系統";
@@ -461,7 +466,6 @@
       }
     }
 
-    // 正式進入系統介面
     function enterApp() {
       document.getElementById('loginView').classList.add('hidden');
       document.getElementById('mainApp').classList.remove('hidden');
@@ -471,13 +475,11 @@
       fetchData();
     }
 
-    // 登出系統
     function handleLogout() {
       sessionStorage.removeItem("tjoc_user");
       window.location.reload();
     }
 
-    // 依角色隱藏限制模組
     function applyRoleUI() {
       if (currentUser && currentUser.role === "assistant_editor") {
         document.getElementById('auditSection').classList.add('hidden');
@@ -486,7 +488,6 @@
       }
     }
 
-    // 讀取後端資料
     async function fetchData() {
       if (!API_URL) return;
       try {
@@ -506,7 +507,6 @@
       }
     }
 
-    // 渲染儀表板統計與圖表
     function renderDashboard() {
       document.getElementById('statTotal').innerText = globalArticles.length;
       const inReview = globalArticles.filter(a => (a.current_status || "").includes("審") || (a.current_status || "").includes("修")).length;
@@ -546,7 +546,6 @@
       });
     }
 
-    // 渲染催辦提醒清單
     function renderReminders() {
       const today = new Date().toISOString().split('T')[0];
       const pending = globalLogs.filter(l => l.due_date && l.status !== "已完成");
@@ -579,7 +578,6 @@
       document.getElementById('statOverdue').innerText = overdue;
     }
 
-    // 渲染稿件清單總表
     function renderArticlesTable(articles) {
       const tbody = document.getElementById('articlesTableBody');
       tbody.innerHTML = "";
@@ -622,7 +620,6 @@
       });
     }
 
-    // 渲染操作日誌
     function renderAuditLogs() {
       const tbody = document.getElementById('auditTableBody');
       document.getElementById('auditLogCount').innerText = `${globalAuditLogs.length} 筆記錄`;
@@ -653,7 +650,6 @@
       });
     }
 
-    // 新增稿件送出
     async function handleCreateArticle(e) {
       e.preventDefault();
       const btn = document.getElementById('btnSubmitArticle');
@@ -698,7 +694,6 @@
       }
     }
 
-    // 開啟編輯視窗
     function openEditModal(articleId) {
       const a = globalArticles.find(item => item.article_id === articleId);
       if (!a) return;
@@ -726,7 +721,6 @@
       openModal('editArticleModal');
     }
 
-    // 儲存稿件修改
     async function handleUpdateArticle(e) {
       e.preventDefault();
       const btn = document.getElementById('btnUpdateArticle');
@@ -773,7 +767,6 @@
       }
     }
 
-    // 刪除稿件 (僅 admin)
     async function handleDeleteArticle(articleId, title) {
       if (!confirm(`【警告】確定要刪除稿件：${articleId}「${title}」嗎？\n此動作將一併刪除其所有歷程，並被記錄在稽核日誌中！`)) {
         return;
@@ -805,7 +798,6 @@
       }
     }
 
-    // 歷程時間戳記打卡
     async function handleAddMilestone() {
       if (!currentSelectedArticleId) return;
       const payload = {
@@ -834,7 +826,6 @@
       fetchData();
     }
 
-    // 開啟歷程時間軸
     function openTimeline(articleId, title) {
       currentSelectedArticleId = articleId;
       document.getElementById('timelineTitle').innerText = `${articleId} 審查歷程`;
@@ -860,7 +851,6 @@
       openModal('timelineModal');
     }
 
-    // 快速過濾總表
     function filterArticlesTable() {
       const q = document.getElementById('searchBox').value.toLowerCase();
       const filtered = globalArticles.filter(a => 
@@ -871,7 +861,6 @@
       renderArticlesTable(filtered);
     }
 
-    // Excel 評鑑清冊匯出
     function exportToExcel() {
       const sDate = document.getElementById('exportStartDate').value;
       const eDate = document.getElementById('exportEndDate').value;
