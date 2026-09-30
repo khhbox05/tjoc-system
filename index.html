@@ -610,7 +610,9 @@
         
         if (result.status === "success") {
           currentUser = result.user;
-          sessionStorage.setItem("tjoc_user", JSON.stringify(currentUser));
+          try { sessionStorage.setItem("tjoc_user", JSON.stringify(currentUser)); } catch (_) {}
+          fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "recordLoginAudit", operatorUsername: currentUser.username, operatorName: currentUser.displayName, operatorRole: currentUser.role }) }).catch(() => {});
           enterApp();
         } else {
           errBox.innerText = result.message || "帳號或密碼錯誤！";
@@ -825,8 +827,8 @@
           reviewHtml = rList.map((r, i) => `
             <div class="text-[11px] border-b border-indigo-200/60 pb-1 mb-1">
               <span class="font-bold text-indigo-800">${r.round_title || `第${i+1}輪`}:</span>
-              ${r.r1_name ? `<span>審1(${r.r1_name}): 送${r.r1_send_date \vert{}\vert{} '-'} 限${r.r1_due_date || '-'} 收${r.r1_return_date \vert{}\vert{} '-'} <strong>[${r.r1_result || '審查中'}]</strong></span><br>` : ''}
-              ${r.r2_name ? `<span>審2(${r.r2_name}): 送${r.r2_send_date \vert{}\vert{} '-'} 限${r.r2_due_date || '-'} 收${r.r2_return_date \vert{}\vert{} '-'} <strong>[${r.r2_result || '審查中'}]</strong></span>` : ''}
+              ${r.r1_name ? `<span>審1(${r.r1_name}): 送${r.r1_send_date || '-'} 限${r.r1_due_date || '-'} 收${r.r1_return_date || '-'} <strong>[${r.r1_result || '審查中'}]</strong></span><br>` : ''}
+              ${r.r2_name ? `<span>審2(${r.r2_name}): 送${r.r2_send_date || '-'} 限${r.r2_due_date || '-'} 收${r.r2_return_date || '-'} <strong>[${r.r2_result || '審查中'}]</strong></span>` : ''}
             </div>
           `).join('');
         }
@@ -1014,6 +1016,7 @@
         action: "createArticle",
         operatorUsername: currentUser.username,
         operatorName: currentUser.displayName,
+        operatorRole: currentUser.role,
         data: {
           article_id: document.getElementById('formArticleId').value.trim(),
           received_date: document.getElementById('formReceivedDate').value,
@@ -1340,6 +1343,7 @@
         action: "updateArticle",
         operatorUsername: currentUser.username,
         operatorName: currentUser.displayName,
+        operatorRole: currentUser.role,
         data: {
           article_id: document.getElementById('editArticleId').value,
           title: document.getElementById('editTitle').value.trim(),
@@ -1383,7 +1387,8 @@
         action: "deleteArticle",
         article_id: articleId,
         operatorUsername: currentUser.username,
-        operatorName: currentUser.displayName
+        operatorName: currentUser.displayName,
+        operatorRole: currentUser.role
       };
 
       try {
@@ -1410,6 +1415,7 @@
         action: "addMilestone",
         operatorUsername: currentUser.username,
         operatorName: currentUser.displayName,
+        operatorRole: currentUser.role,
         data: {
           article_id: currentSelectedArticleId,
           stage: document.getElementById('mStage').value,
